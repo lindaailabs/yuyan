@@ -13,19 +13,19 @@
 
 ## 2. Flutter App（apps/app）
 
-- [ ] 2.1 `core/auth/`：SecureTokenStorage（flutter_secure_storage）、AuthState（未登录/未引导/就绪）、authStateProvider（启动恢复 token+拉取 me）
-- [ ] 2.2 `data/remote/api_client.dart` 实现：Dio 封装 + 401 拦截器（refresh 一次、重放、失败登出）+ 统一包裹解析；单测（mock）
-- [ ] 2.3 `data/repository/auth_repository.dart`：sendSmsCode/login/refresh/getMe/updateMe/search（实现 ApiClient 接口）
-- [ ] 2.4 8 个预置头像 assets（scripts/ 生成占位图）+ AvatarWidget（id→asset 映射）
-- [ ] 2.5 `features/auth/login_page`：手机号+验证码图片（点击刷新）+ 短信兼容态 + 提交登录
-- [ ] 2.6 `features/auth/onboarding_page`：8 头像选择 + 昵称输入 + 提交
-- [ ] 2.7 `features/profile/profile_page`：展示 + 编辑昵称/头像
-- [ ] 2.8 `features/contacts/search_page`：手机号搜索 + 结果卡片（加好友按钮禁用占位）
-- [ ] 2.9 路由三态守卫（go_router redirect）+ core/l10n 文案补全
-- [ ] 2.10 flutter test（token 管理/拦截器/三态路由）+ flutter analyze 0 issue
+- [x] 2.1 `core/auth/`：SecureTokenStorage（flutter_secure_storage）、AuthState（未登录/未引导/就绪）、authStateProvider（启动恢复 token+拉取 me）
+- [x] 2.2 `data/remote/api_client.dart` 实现：Dio 封装 + 401 拦截器（refresh 一次、重放、失败登出）+ 统一包裹解析；单测（mock adapter）
+- [x] 2.3 `data/repository/auth_repository.dart`：sendSmsCode/login/refresh/getMe/updateMe/search（实现 ApiClient 接口）
+- [x] 2.4 8 个预置头像 assets（scripts/ 生成占位图）+ AvatarWidget（id→asset 映射）
+- [x] 2.5 `features/auth/login_page`：手机号+验证码图片（点击刷新）+ 短信兼容态 + 提交登录
+- [x] 2.6 `features/auth/onboarding_page`：8 头像选择 + 昵称输入 + 提交
+- [x] 2.7 `features/profile/profile_page`：展示 + 编辑昵称/头像
+- [x] 2.8 `features/contacts/search_page`：手机号搜索 + 结果卡片（加好友按钮禁用占位）
+- [x] 2.9 路由三态守卫（go_router redirect 纯函数 + 单测）+ core/l10n 文案补全
+- [x] 2.10 flutter test（token 管理/拦截器/状态机/三态路由，19 例全绿）+ flutter analyze 0 issue
 
 ## 3. 联调与收尾
 
-- [ ] 3.1 docker compose 全栈起，双端冒烟：登录→引导→资料→搜索→重启 App 保持会话
-- [ ] 3.2 PR 材料：文件清单、新依赖声明（golang-jwt/v5、base64Captcha、flutter_secure_storage）、测试清单
+- [x] 3.1 docker compose 全栈起 + API 级冒烟（重建 server 镜像后）：验证码下发→Redis 存码→登录自动注册→me（nickname 空）→PUT 引导→B 登录→搜索 A（脱敏 138****1111）→refresh 换新 token；错误路径（无 token/篡改 token→401，错码→2002，非法手机号→1001，限频→2001）全数符合；中文昵称 utf8mb4 往返正确（HEX=E8AFAD）。客户端「重启保持会话」由单测覆盖（token 持久化+refresh 流程）；Android 模拟器 UI 走查因本机无 Android SDK 仍为 TEST-GAP
+- [x] 3.2 PR 材料：文件清单、新依赖声明（golang-jwt/v5、base64Captcha、flutter_secure_storage、dio、flutter_riverpod、go_router）、测试清单
 - [ ] 3.3 里程碑提交（feat(account): W2 账号体系）+ push（网络允许时）

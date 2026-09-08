@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import 'core/auth/auth_state.dart';
+import 'core/providers.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'data/local/app_database.dart';
@@ -25,12 +28,19 @@ class YuyanApp extends ConsumerWidget {
   }
 }
 
+/// 路由 provider：绑定认证三态（状态变化 → redirect 重估）。
+final appRouterProvider = Provider<GoRouter>((ref) {
+  final authState = ValueNotifier<AuthState>(ref.read(authControllerProvider));
+  ref.listen<AuthState>(authControllerProvider, (_, next) {
+    authState.value = next;
+  });
+  ref.onDispose(authState.dispose);
+  return buildRouter(authState);
+});
+
 /// 数据库 provider（drift 单例；应用退出时关闭）。
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final db = AppDatabase();
   ref.onDispose(db.close);
   return db;
 });
-
-/// 路由 provider（便于测试注入）。
-final appRouterProvider = Provider((ref) => appRouter);
