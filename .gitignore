@@ -1,0 +1,23 @@
+# IDE / AI 工具本地配置
+.trae/
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+*.exe
+*.test
+*.out
+
+# Flutter
+apps/app/.dart_tool/
+apps/app/.flutter-plugins*
+apps/app/build/
+
+# 本地环境与密钥
+.env
+.env.*
+*.local

@@ -1,0 +1,29 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+context: |
+  Yuyan（语燕）— 即时通讯 App。一期 MVP：单聊纯文本消息完整闭环
+  （注册登录、好友关系、消息收发、离线补发、多端同步）。
+
+  技术栈（已定案）：
+  - 客户端：Flutter + Riverpod + drift，WebSocket + Dio
+  - 服务端：Go 单体（Gin + GORM），MySQL 8.x（InnoDB/utf8mb4）+ Redis 7
+  - 协议：自定义 JSON 帧 v1（WebSocket）
+  - 部署：Docker Compose 单机
+
+  权威规范：docs/LLM_DEV_GUIDE.md（任何变更前必读，冲突时以它为准）。
+  分层约束：Go 侧 api/ws → service → repo；Flutter 侧 UI → provider → repository。
+  消息可靠性：client_msg_id 幂等去重，msg_id 自增作游标，禁止 offset/时间戳分页。
+  Out of Scope（一期禁止实现）：群聊、多媒体消息、已读回执、推送、微服务。
+  Conventional Commits；测试要求见 guide §7。
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
