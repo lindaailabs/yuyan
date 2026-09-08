@@ -3,6 +3,9 @@
 .idea/
 .vscode/
 
+# 本地便携工具链（Go/Flutter SDK）
+.tools/
+
 # OS
 .DS_Store
 Thumbs.db

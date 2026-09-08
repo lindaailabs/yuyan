@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yuyan.im/protocol/ws/conn.heartbeat.json",
+  "title": "conn.heartbeat frame",
+  "description": "客户端心跳，每 30s 一次；服务端 90s 未收到则断开。无业务负载",
+  "type": "object",
+  "properties": {
+    "cmd": { "const": "conn.heartbeat" },
+    "seq": { "type": "integer", "minimum": 1 }
+  },
+  "required": ["cmd", "seq"],
+  "additionalProperties": false
+}

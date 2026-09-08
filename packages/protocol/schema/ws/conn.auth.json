@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yuyan.im/protocol/ws/conn.auth.json",
+  "title": "conn.auth request frame",
+  "description": "连接建立后 5s 内鉴权，data 携带 JWT token",
+  "type": "object",
+  "properties": {
+    "cmd": { "const": "conn.auth" },
+    "seq": { "type": "integer", "minimum": 1 },
+    "data": {
+      "type": "object",
+      "properties": {
+        "token": { "type": "string", "minLength": 1 }
+      },
+      "required": ["token"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["cmd", "seq", "data"],
+  "additionalProperties": false
+}

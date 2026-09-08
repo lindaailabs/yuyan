@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yuyan.im/protocol/ws/msg.push.json",
+  "title": "msg.push frame",
+  "description": "服务端向在线接收方推送新消息",
+  "type": "object",
+  "properties": {
+    "cmd": { "const": "msg.push" },
+    "seq": { "type": "integer", "minimum": 1 },
+    "data": {
+      "type": "object",
+      "properties": {
+        "msg_id": { "type": "integer", "minimum": 1 },
+        "conv_id": { "type": "integer", "minimum": 1 },
+        "sender_id": { "type": "integer", "minimum": 1 },
+        "msg_type": { "type": "integer", "minimum": 1 },
+        "content": { "type": "string" },
+        "created_at": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["msg_id", "conv_id", "sender_id", "msg_type", "content", "created_at"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["cmd", "seq", "data"],
+  "additionalProperties": false
+}

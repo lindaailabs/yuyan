@@ -1,0 +1,18 @@
+# golangci-lint v2 配置：基础集，Java 转型团队可读优先（guide §6.1）。
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - govet        # 官方静态检查
+    - staticcheck  # 综合静态检查
+    - errcheck     # 错误必须显式处理
+    - unused       # 未使用代码
+    - revive       # 风格检查（golint 继任）
+
+formatters:
+  enable:
+    - gofmt
+
+run:
+  tests: true

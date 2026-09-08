@@ -1,0 +1,66 @@
+# Yuyan 一期本地/单机部署（guide §2：Docker Compose 单机）。
+# 用法：
+#   docker compose up -d          # 全量（MySQL+Redis+server）
+#   docker compose --profile db-only up -d   # 仅数据库（本地直跑 go 时）
+name: yuyan
+
+services:
+  mysql:
+    image: mysql:8.0
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+    environment:
+      MYSQL_ROOT_PASSWORD: yuyan123
+      MYSQL_DATABASE: yuyan
+      MYSQL_USER: yuyan
+      MYSQL_PASSWORD: yuyan123
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-pyuyan123"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  server:
+    build:
+      context: ..
+      dockerfile: apps/server/Dockerfile
+    environment:
+      HTTP_PORT: "8080"
+      MYSQL_DSN: yuyan:yuyan123@tcp(mysql:3306)/yuyan?charset=utf8mb4&parseTime=True&loc=Local
+      REDIS_ADDR: redis:6379
+      LOG_LEVEL: info
+      APP_ENV: dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+  redis-data:

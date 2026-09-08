@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yuyan.im/protocol/ws/msg.pull.json",
+  "title": "msg.pull request frame",
+  "description": "客户端分页拉取离线消息，cursor 为消息 id 游标（首次传 0）",
+  "type": "object",
+  "properties": {
+    "cmd": { "const": "msg.pull" },
+    "seq": { "type": "integer", "minimum": 1 },
+    "data": {
+      "type": "object",
+      "properties": {
+        "cursor": { "type": "integer", "minimum": 0 },
+        "limit": { "type": "integer", "minimum": 1, "maximum": 100 }
+      },
+      "required": ["cursor", "limit"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["cmd", "seq", "data"],
+  "additionalProperties": false
+}

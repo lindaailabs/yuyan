@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yuyan.im/protocol/ws/response.json",
+  "title": "WS response frame",
+  "description": "WS 命令的响应帧：cmd/seq 原样带回，code 0 为成功",
+  "type": "object",
+  "properties": {
+    "cmd": { "type": "string", "minLength": 1 },
+    "seq": { "type": "integer", "minimum": 1 },
+    "code": { "type": "integer", "minimum": 0 },
+    "msg": { "type": "string" },
+    "data": { "type": ["object", "null"] }
+  },
+  "required": ["cmd", "seq", "code", "msg"],
+  "additionalProperties": false
+}

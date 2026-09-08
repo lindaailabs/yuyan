@@ -1,0 +1,5 @@
+package com.yuyan.app.yuyan_app
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

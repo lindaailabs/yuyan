@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yuyan.im/protocol/ws/conv.unread.json",
+  "title": "conv.unread frame",
+  "description": "服务端推送会话未读数变更",
+  "type": "object",
+  "properties": {
+    "cmd": { "const": "conv.unread" },
+    "seq": { "type": "integer", "minimum": 1 },
+    "data": {
+      "type": "object",
+      "properties": {
+        "conv_id": { "type": "integer", "minimum": 1 },
+        "unread_count": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["conv_id", "unread_count"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["cmd", "seq", "data"],
+  "additionalProperties": false
+}

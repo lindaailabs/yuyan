@@ -1,0 +1,36 @@
+name: yuyan_app
+description: "Yuyan（语燕）即时通讯 App 客户端。"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # 状态管理（guide §6.2：仅 Riverpod）
+  flutter_riverpod: ^2.6.1
+  # 路由
+  go_router: ^16.0.0
+  # 本地存储
+  drift: ^2.28.0
+  # 网络（repository 接口占位使用）
+  dio: ^5.9.0
+  web_socket_channel: ^3.0.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+  # drift 代码生成
+  drift_dev: ^2.28.0
+  build_runner: ^2.7.0
+
+flutter:
+  uses-material-design: true

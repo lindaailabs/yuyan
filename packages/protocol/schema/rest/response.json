@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://yuyan.im/protocol/rest/response.json",
+  "title": "REST unified response wrapper",
+  "description": "REST 统一响应包裹：code 0 成功；1xxx 参数/鉴权；2xxx 业务；5xxx 服务端",
+  "type": "object",
+  "properties": {
+    "code": { "type": "integer" },
+    "msg": { "type": "string" },
+    "data": true
+  },
+  "required": ["code", "msg"],
+  "additionalProperties": false
+}
