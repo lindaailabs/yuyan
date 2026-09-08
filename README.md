@@ -1,5 +1,7 @@
-# Yuyan（语燕）
+# Yuyan
 
-即时通讯 App。一期 MVP：单聊纯文本消息完整闭环（Flutter + Go + MySQL 8 + Redis）。
+An instant messaging app. Phase 1 MVP: a complete one-to-one text messaging loop (Flutter + Go + MySQL 8 + Redis).
 
-开发规范见 [docs/LLM_DEV_GUIDE.md](docs/LLM_DEV_GUIDE.md)（技术栈、架构分层、协议、红线清单）。
+See [docs/LLM_DEV_GUIDE.md](docs/LLM_DEV_GUIDE.md) for development guidelines (tech stack, architecture layering, protocol, hard rules).
+
+[中文文档](README-zh.md)
