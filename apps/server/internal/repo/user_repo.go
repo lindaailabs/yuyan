@@ -38,6 +38,19 @@ func (r *UserRepo) FindByID(ctx context.Context, id int64) (*model.User, error) 
 	return &u, nil
 }
 
+// FindByIDs 批量查找（好友/申请列表组装资料用）；空入参返回空切片。
+// 缺失的 id 静默跳过（ friendships 行存在而用户行缺失属脏数据，不阻断列表）。
+func (r *UserRepo) FindByIDs(ctx context.Context, ids []int64) ([]model.User, error) {
+	if len(ids) == 0 {
+		return []model.User{}, nil
+	}
+	var users []model.User
+	if err := r.db.WithContext(ctx).Where("id IN ?", ids).Find(&users).Error; err != nil {
+		return nil, fmt.Errorf("find users by ids: %w", err)
+	}
+	return users, nil
+}
+
 // CreateUser 创建用户（登录自动注册路径，nickname 为 NULL、avatar_id 默认 1）。
 // phone 唯一冲突由 DB 唯一索引兜底，调用方（service）先查后插，竞态时返回错误。
 func (r *UserRepo) CreateUser(ctx context.Context, phone string) (*model.User, error) {

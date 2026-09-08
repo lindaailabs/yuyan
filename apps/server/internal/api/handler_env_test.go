@@ -64,8 +64,9 @@ func newHandlerEnv(t *testing.T) *handlerEnv {
 	jwtMgr := jwt.NewManager("handler-test-secret")
 	authSvc := service.NewAuthService(repo.NewCaptchaRepo(rdb), repo.NewUserRepo(gdb), jwtMgr)
 	userSvc := service.NewUserService(repo.NewUserRepo(gdb))
+	contactsSvc := service.NewContactsService(repo.NewFriendshipRepo(gdb), repo.NewUserRepo(gdb))
 
-	return &handlerEnv{r: NewRouter(RouterDeps{Auth: authSvc, User: userSvc, JWT: jwtMgr}), mr: mr, rdb: rdb}
+	return &handlerEnv{r: NewRouter(RouterDeps{Auth: authSvc, User: userSvc, Contacts: contactsSvc, JWT: jwtMgr}), mr: mr, rdb: rdb}
 }
 
 // envelope 统一响应包裹（测试解析用）。

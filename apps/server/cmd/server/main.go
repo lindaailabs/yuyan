@@ -49,8 +49,9 @@ func main() {
 	jwtMgr := jwt.NewManager(cfg.JWTSecret)
 	authSvc := service.NewAuthService(repo.NewCaptchaRepo(rdb), repo.NewUserRepo(db), jwtMgr)
 	userSvc := service.NewUserService(repo.NewUserRepo(db))
+	contactsSvc := service.NewContactsService(repo.NewFriendshipRepo(db), repo.NewUserRepo(db))
 
-	r := api.NewRouter(api.RouterDeps{Auth: authSvc, User: userSvc, JWT: jwtMgr})
+	r := api.NewRouter(api.RouterDeps{Auth: authSvc, User: userSvc, Contacts: contactsSvc, JWT: jwtMgr})
 	slog.Info("http listening", "port", cfg.HTTPPort)
 	if err := r.Run(":" + cfg.HTTPPort); err != nil {
 		slog.Error("http server exited", "err", err)

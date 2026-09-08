@@ -143,7 +143,7 @@ apps/app/lib/
 users(id BIGINT UNSIGNED AUTO_INCREMENT PK, phone VARCHAR(20) UNIQUE,
       nickname, avatar_url, created_at, updated_at)
 
--- 好友关系（双向各存一行；status 用 SMALLINT 常量：1=pending 2=accepted 3=blocked）
+-- 好友关系（双向各存一行；status 用 SMALLINT 常量：1=pending 2=accepted 3=blocked 4=rejected）
 friendships(id, user_id, friend_id, status SMALLINT, created_at,
             UNIQUE KEY uk_user_friend(user_id, friend_id))
 
@@ -217,6 +217,7 @@ offline_msgs(id, user_id, msg_id, created_at,
 | POST | `/api/v1/friends/requests` | 发起好友申请 |
 | GET | `/api/v1/friends/requests` | 申请列表 |
 | POST | `/api/v1/friends/requests/{id}/accept` | 同意申请 |
+| POST | `/api/v1/friends/requests/{id}/reject` | 拒绝申请（状态标记，不物理删除） |
 | GET | `/api/v1/friends` | 好友列表 |
 | GET | `/api/v1/conversations` | 会话列表 |
 | GET | `/api/v1/messages?conv_id=&cursor=&limit=20` | 历史消息（游标分页，禁止 offset） |

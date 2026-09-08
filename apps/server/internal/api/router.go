@@ -10,9 +10,10 @@ import (
 
 // RouterDeps 路由装配依赖（main 组装后注入）。
 type RouterDeps struct {
-	Auth *service.AuthService
-	User *service.UserService
-	JWT  *jwt.Manager
+	Auth     *service.AuthService
+	User     *service.UserService
+	Contacts *service.ContactsService
+	JWT      *jwt.Manager
 }
 
 // NewRouter 装配 HTTP 路由与中间件。
@@ -40,6 +41,16 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 		userGroup.GET("/me", userHandler.Me)
 		userGroup.PUT("/me", userHandler.UpdateMe)
 		userGroup.GET("/search", userHandler.Search)
+	}
+
+	contactsHandler := NewContactsHandler(deps.Contacts)
+	friendsGroup := v1.Group("/friends", AuthMiddleware(deps.JWT))
+	{
+		friendsGroup.POST("/requests", contactsHandler.SendRequest)
+		friendsGroup.GET("/requests", contactsHandler.ListRequests)
+		friendsGroup.POST("/requests/:id/accept", contactsHandler.Accept)
+		friendsGroup.POST("/requests/:id/reject", contactsHandler.Reject)
+		friendsGroup.GET("", contactsHandler.ListFriends)
 	}
 	return r
 }
