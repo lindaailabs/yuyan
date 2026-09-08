@@ -28,4 +28,4 @@
 
 - [x] 3.1 docker compose 全栈起 + API 级冒烟（重建 server 镜像后）：验证码下发→Redis 存码→登录自动注册→me（nickname 空）→PUT 引导→B 登录→搜索 A（脱敏 138****1111）→refresh 换新 token；错误路径（无 token/篡改 token→401，错码→2002，非法手机号→1001，限频→2001）全数符合；中文昵称 utf8mb4 往返正确（HEX=E8AFAD）。客户端「重启保持会话」由单测覆盖（token 持久化+refresh 流程）；Android 模拟器 UI 走查因本机无 Android SDK 仍为 TEST-GAP
 - [x] 3.2 PR 材料：文件清单、新依赖声明（golang-jwt/v5、base64Captcha、flutter_secure_storage、dio、flutter_riverpod、go_router）、测试清单
-- [ ] 3.3 里程碑提交（feat(account): W2 账号体系）+ push（网络允许时）
+- [x] 3.3 里程碑提交（feat(account): W2 账号体系）：7481a7d 服务端 + ca3c825 客户端，已推送 origin/main
