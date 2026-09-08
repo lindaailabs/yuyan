@@ -12,6 +12,7 @@ type Config struct {
 	HTTPPort  string // HTTP 监听端口
 	MySQLDSN  string // MySQL 连接串（须含 charset=utf8mb4）
 	RedisAddr string // Redis 地址 host:port
+	JWTSecret string // JWT HS256 签名密钥（JWT_SECRET 注入，禁硬编码 guide §9.3）
 	LogLevel  string // 日志级别：debug/info/warn/error
 	AppEnv    string // 运行环境：dev/prod
 }
@@ -22,6 +23,7 @@ func Load() Config {
 		HTTPPort:  getenv("HTTP_PORT", "8080"),
 		MySQLDSN:  getenv("MYSQL_DSN", "root:yuyan123@tcp(127.0.0.1:3306)/yuyan?charset=utf8mb4&parseTime=True&loc=Local"),
 		RedisAddr: getenv("REDIS_ADDR", "127.0.0.1:6379"),
+		JWTSecret: getenv("JWT_SECRET", "dev-only-secret-change-me"),
 		LogLevel:  getenv("LOG_LEVEL", "info"),
 		AppEnv:    getenv("APP_ENV", "dev"),
 	}

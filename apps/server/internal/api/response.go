@@ -31,10 +31,12 @@ func FailErr(c *gin.Context, err error) {
 }
 
 func httpStatusOf(code errcode.Code) int {
-	switch errcode.SegmentOf(code) {
-	case 1000:
-		return http.StatusBadRequest // 1xxx 参数/鉴权 → 400（细分由具体端点决定）
-	case 2000:
+	switch {
+	case code == errcode.ErrUnauthorized:
+		return http.StatusUnauthorized // 1002 → 401，客户端拦截器据此触发 refresh
+	case errcode.SegmentOf(code) == 1000:
+		return http.StatusBadRequest // 其余 1xxx 参数错误 → 400
+	case errcode.SegmentOf(code) == 2000:
 		return http.StatusOK // 2xxx 业务错误：HTTP 层成功、业务码表达失败
 	default:
 		return http.StatusInternalServerError

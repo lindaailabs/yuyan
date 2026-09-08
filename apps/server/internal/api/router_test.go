@@ -14,7 +14,7 @@ func init() {
 }
 
 func TestHealthz(t *testing.T) {
-	r := NewRouter()
+	r := NewRouter(RouterDeps{})
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	r.ServeHTTP(w, req)
@@ -32,7 +32,7 @@ func TestHealthz(t *testing.T) {
 }
 
 func TestTraceIDEchoed(t *testing.T) {
-	r := NewRouter()
+	r := NewRouter(RouterDeps{})
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	req.Header.Set(TraceIDHeader, "trace-abc-123")
@@ -44,7 +44,7 @@ func TestTraceIDEchoed(t *testing.T) {
 }
 
 func TestTraceIDGenerated(t *testing.T) {
-	r := NewRouter()
+	r := NewRouter(RouterDeps{})
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/healthz", nil)
 	r.ServeHTTP(w, req)
@@ -59,7 +59,7 @@ func TestTraceIDGenerated(t *testing.T) {
 }
 
 func TestTraceIDFromContext(t *testing.T) {
-	r := NewRouter()
+	r := NewRouter(RouterDeps{})
 	var seen string
 	r.GET("/probe", func(c *gin.Context) {
 		seen = TraceIDFrom(c.Request.Context())

@@ -1,15 +1,15 @@
 ## 1. 服务端（apps/server）
 
-- [ ] 1.1 migration `20260908_add_users`（up/down SQL，guide §4 基线 + avatar_id）+ 真容器结构断言测试
-- [ ] 1.2 `internal/pkg/jwt`：HS256 签发/解析（claims uid/exp/typ），JWT_SECRET env 注入；单测（过期/篡改/typ 混用）
-- [ ] 1.3 `internal/repo/captcha_repo`：Set/Get/Delete（sms:code:{phone} TTL 5min）+ 限频（sms:freq:{phone} TTL 60s）；miniredis 单测
-- [ ] 1.4 `internal/repo/user_repo`：FindByPhone/CreateUser/GetByID/UpdateProfile/SearchByPhone；testcontainers 集成测试
-- [ ] 1.5 `internal/service/auth_service`：SendSmsCode（限频+base64Captcha 图形渲染）、Login（校验+一次性删除+自动注册+双 token 签发）、Refresh；单测（含错误路径全覆盖，覆盖率≥70%）
-- [ ] 1.6 `internal/service/user_service`：Profile/UpdateProfile（nickname 1~20、avatar_id 1~8 校验）/Search（脱敏）；单测
-- [ ] 1.7 `internal/api/middleware_auth.go`：Bearer 解析、typ=access 校验、uid 注入 context
-- [ ] 1.8 `internal/api` handler 与路由：5 组端点注册到 /api/v1，binding tag 校验；统一错误转换
-- [ ] 1.9 httptest：每端点 ≥1 happy + ≥1 error（1001 参数 / 2xxx 业务 / 1002 认证）
-- [ ] 1.10 make test-server 全绿 + golangci-lint 0 issue
+- [x] 1.1 migration `20260908_add_users`（up/down SQL，guide §4 基线 + avatar_id）+ 真容器结构断言测试
+- [x] 1.2 `internal/pkg/jwt`：HS256 签发/解析（claims uid/exp/typ），JWT_SECRET env 注入；单测（过期/篡改/typ 混用）
+- [x] 1.3 `internal/repo/captcha_repo`：Set/Get/Delete（sms:code:{phone} TTL 5min）+ 限频（sms:freq:{phone} TTL 60s）；miniredis 单测
+- [x] 1.4 `internal/repo/user_repo`：FindByPhone/CreateUser/GetByID/UpdateProfile/SearchByPhone；testcontainers 集成测试
+- [x] 1.5 `internal/service/auth_service`：SendSmsCode（限频+base64Captcha 图形渲染）、Login（校验+一次性删除+自动注册+双 token 签发）、Refresh；单测（含错误路径全覆盖，覆盖率≥70%）
+- [x] 1.6 `internal/service/user_service`：Profile/UpdateProfile（nickname 1~20、avatar_id 1~8 校验）/Search（脱敏）；单测
+- [x] 1.7 `internal/api/middleware_auth.go`：Bearer 解析、typ=access 校验、uid 注入 context
+- [x] 1.8 `internal/api` handler 与路由：5 组端点注册到 /api/v1，binding tag 校验；统一错误转换
+- [x] 1.9 httptest：每端点 ≥1 happy + ≥1 error（1001 参数 / 2xxx 业务 / 1002 认证）
+- [x] 1.10 make test-server 全绿 + golangci-lint 0 issue
 
 ## 2. Flutter App（apps/app）
 

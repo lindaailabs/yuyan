@@ -9,8 +9,10 @@ import (
 	"github.com/lindaailabs/yuyan/server"
 	"github.com/lindaailabs/yuyan/server/internal/api"
 	"github.com/lindaailabs/yuyan/server/internal/pkg/config"
+	"github.com/lindaailabs/yuyan/server/internal/pkg/jwt"
 	"github.com/lindaailabs/yuyan/server/internal/pkg/logger"
 	"github.com/lindaailabs/yuyan/server/internal/repo"
+	"github.com/lindaailabs/yuyan/server/internal/service"
 )
 
 func main() {
@@ -43,7 +45,12 @@ func main() {
 		slog.Info("redis ping ok")
 	}
 
-	r := api.NewRouter()
+	// 业务装配：repo → service → api（guide §3.3 分层）。
+	jwtMgr := jwt.NewManager(cfg.JWTSecret)
+	authSvc := service.NewAuthService(repo.NewCaptchaRepo(rdb), repo.NewUserRepo(db), jwtMgr)
+	userSvc := service.NewUserService(repo.NewUserRepo(db))
+
+	r := api.NewRouter(api.RouterDeps{Auth: authSvc, User: userSvc, JWT: jwtMgr})
 	slog.Info("http listening", "port", cfg.HTTPPort)
 	if err := r.Run(":" + cfg.HTTPPort); err != nil {
 		slog.Error("http server exited", "err", err)
