@@ -209,7 +209,7 @@ offline_msgs(id, user_id, msg_id, created_at,
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/v1/auth/sms-code` | 发送验证码（Redis 存储，5min 过期，限频 1/min） |
+| POST | `/api/v1/auth/sms-code` | 发送验证码（Redis 存储，5min 过期，限频 1/min）。一期不对接短信：验证码渲染为图形验证码（base64 图片）随响应下发，生产接入短信仅改本端点内部实现 |
 | POST | `/api/v1/auth/login` | 验证码登录/注册，返回 JWT（access 2h + refresh 30d） |
 | POST | `/api/v1/auth/refresh` | 刷新 token |
 | GET/PUT | `/api/v1/users/me` | 个人资料 |

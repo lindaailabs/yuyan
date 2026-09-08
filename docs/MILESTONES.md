@@ -52,13 +52,14 @@
 **目标**: A、B 能各自登录，能互相搜到。
 
 - migration：`users` 表（§4 基线）
-- REST：`POST /auth/sms-code`（Redis 5min TTL、限频 1/min）、`POST /auth/login`（验证码校验 + 自动注册，JWT access 2h / refresh 30d）、`POST /auth/refresh`、`GET/PUT /users/me`、`GET /users/search?q=`
-- App：登录页（手机号+验证码）、token 持久化与自动刷新、我的资料页（昵称/头像 URL）、用户搜索页
+- REST：`POST /auth/sms-code`（生成 6 位数字验证码 → Redis `sms:code:{phone}` 5min TTL、限频 1/min；一期将验证码渲染为**图形验证码** base64 图片随响应下发，不对接短信服务商）、`POST /auth/login`（验证码校验 + 自动注册，JWT access 2h / refresh 30d）、`POST /auth/refresh`、`GET/PUT /users/me`、`GET /users/search?q=`
+- App：登录页（手机号 + 图形验证码图片展示 + 验证码输入；响应无图片字段时按等待短信处理，两态兼容）、token 持久化与自动刷新、我的资料页（昵称/头像 URL）、用户搜索页
 - 测试：service 层单测 + 每端点 happy/error httptest（§7）
+- 依赖：图片渲染拟用 `base64Captcha` 或 x/image 手绘（二选一，PR 中确认）
 
-**验收**: 闭环场景 §0.1、§0.2 通过（搜索部分）；错误码符合 1xxx/2xxx 段位。
+**验收**: 闭环场景 §0.1、§0.2 通过（搜索部分）；错误码符合 1xxx/2xxx 段位；验证码生成/校验/限频/TTL 各有用例。
 
-**待决**: 开发环境验证码获取方式——接真实短信服务商（阿里云，需付费+签名备案）vs dev 模式固定返回验证码/写日志。默认 dev 模式走日志，生产再接（实现时 PR 中确认）。
+**已决（2026-09）**: 一期验证码不做真实短信对接，以图形验证码代替——验证码仅存 Redis，响应携带渲染图片；生产接入短信时只改 `sms-code` 端点内部实现，契约不变。
 
 ---
 
@@ -123,7 +124,6 @@
 
 | # | 事项 | 影响 | 建议 |
 |---|---|---|---|
-| 1 | 短信服务商（W2） | dev 无法收真实验证码 | dev 模式验证码写日志/固定码，PR 确认 |
-| 2 | 头像存储（W2） | guide 含 avatar_url 但无存储方案 | MVP 仅支持填 URL + 默认头像，对象存储二期 |
-| 3 | W4 消息链路复杂度 | 幂等+事务+推送交织，最易出丢/重/乱序 | 单独 PR 分步交付：先持久化+ack，再 push；§9.8 要求 PR 说明推理 |
-| 4 | Flutter Windows 环境差异 | 2 名客户端为虚拟配置 | 实际以本机模拟器为准，问题随 W1 暴露 |
+| 1 | 头像存储（W2） | guide 含 avatar_url 但无存储方案 | MVP 仅支持填 URL + 默认头像，对象存储二期 |
+| 2 | W4 消息链路复杂度 | 幂等+事务+推送交织，最易出丢/重/乱序 | 单独 PR 分步交付：先持久化+ack，再 push；§9.8 要求 PR 说明推理 |
+| 3 | Flutter Windows 环境差异 | 2 名客户端为虚拟配置 | 实际以本机模拟器为准，问题随 W1 暴露 |
