@@ -1,128 +1,155 @@
-# 一期里程碑拆解（W1~W6）
+# 一期里程碑拆解（AI 宠物方向）
 
-> **依据**: [LLM_DEV_GUIDE.md](LLM_DEV_GUIDE.md) §1/§4/§5/§7
-> **主线验收**: 多账号对话闭环（见 §0）
-> **粒度约定**: 每个 W 对应一个 openspec change（如 `add-auth-module`），任务下发用 guide §8 模板；W 验收通过即为里程碑节点，自动 commit。
+> 依据: [LLM_DEV_GUIDE.md](LLM_DEV_GUIDE.md)
+> 定位: AI 宠物应用，一只有记忆、会成长、能对话的虚拟宠物
+> 主线验收: 陪伴闭环，而不是人与人 IM 闭环
 
----
+## 0. 闭环验收场景
 
-## 0. 闭环验收场景（一期完成的唯一标准）
+一期完成的唯一标准：一个真实用户在一台手机或模拟器上完成以下流程。
 
-两个真实账号 A、B，在两台设备/模拟器上：
+1. 用户注册登录，完成昵称和头像设置。
+2. 用户创建或领养一只宠物，设置名字、外观和初始性格。
+3. 用户进入宠物主页，能看到宠物状态、心情、等级和亲密度。
+4. 用户发送文本消息，服务端通过 AI Gateway 生成回复，App 能展示发送中、流式/返回中、成功和失败状态。
+5. 宠物从对话中抽取至少一条长期记忆，用户能在记忆页查看并删除。
+6. 后续对话能召回相关记忆，并体现在宠物回复中。
+7. 多轮互动后，宠物成长状态发生可解释变化，生成成长事件。
+8. 用户杀进程重开后，宠物档案、历史消息、记忆和成长状态完整恢复。
+9. 服务端记录每轮 AI 调用的模型、token、耗时、错误码和成本统计字段。
+10. 权益模型可表达免费/订阅用户的额度差异，真实支付接入可后置。
 
-1. A、B 各自注册登录（验证码）
-2. A 搜索 B 手机号 → 发好友申请 → B 同意
-3. A、B 在线互发文本消息（P99 < 500ms，WS 实时推送）
-4. B 离线时 A 发 N 条消息 → B 上线后**恰好收到 N 条**（离线补发，不丢不重）
-5. 任一端杀进程重开 → 历史消息完整（本地 drift + 服务端游标分页双源）
-6. 会话列表正确：排序按最新消息、未读数准确、preview 为最后一条文本
-7. B 换一台设备登录 → 好友、会话、消息全部一致（多端同步）
-8. 压测：1 万连接、1000 msg/s 通过 `scripts/bench-ws.go`
+## W0 定位切换与遗留资产盘点
 
----
+目标：把项目从早期 IM 路线切到 AI 宠物路线，避免继续扩展旧主线。
 
-## W1 骨架与环境基座
+- 更新 README、LLM_DEV_GUIDE、MILESTONES、OpenSpec context。
+- 标记好友/通讯录/人与人单聊为非一期主线。
+- 盘点可复用资产：账号、JWT、验证码、Dio、Riverpod、drift、WebSocket、消息分页、错误码、测试框架。
+- 新建 OpenSpec change：`pivot-to-ai-pet-mvp`，覆盖 pet、memory、ai-gateway、entitlement、analytics。
+- 决定旧 friendship 代码策略：保留但不扩展，或后续迁移为隐藏模块。
 
-**目标**: 三端脚手架跑通，一条命令拉起完整环境。
+验收：后续任务模板均以 AI 宠物为主线；没有新任务继续要求实现好友闭环。
 
-### 服务端
-- monorepo 目录：`apps/server`（Go module `github.com/lindaailabs/yuyan/server`）、`packages/protocol`
-- 分层骨架：`cmd/server/main.go` + `internal/{api,ws,service,repo,model,pkg}`
-- pkg：配置加载、`errcode`、slog 封装（HTTP 中间件注入 trace_id）
-- GORM + MySQL 连接；migration 机制（时间戳前缀 SQL 文件，golang-migrate 或等价方案，**新依赖需 PR 确认**）
-- 健康检查端点 `GET /healthz`
+## W1 账号与宠物档案
 
-### 协议
-- `packages/protocol`：7 个命令字 + REST 响应包裹的 JSON Schema（§5.2/§5.3 全集）+ 校验用例（§7）
+目标：用户能登录并拥有一只宠物。
 
-### 客户端
-- `apps/app`：Flutter 工程骨架，按 §3.4 建目录（core/data/features/shared）
-- Riverpod 路由壳 + 主题；drift 初始化；Dio/WS client 空实现（repository 接口占位）
+服务端：
 
-### 环境
-- `deploy/docker-compose.yml`：MySQL 8（utf8mb4）+ Redis 7 + server
-- `Makefile`：`run` / `test-server` / `lint` / `gen-protocol`
+- 复用现有 auth/user 能力。
+- migration：`pets` 表，必要时补 `users.avatar_id` 兼容字段。
+- REST：`POST /api/v1/pets`、`GET /api/v1/pets/{id}`、`PUT /api/v1/pets/{id}`、`GET /api/v1/pets/{id}/state`。
+- service：创建宠物时初始化等级、亲密度、心情、persona。
+- 测试：创建宠物、重复创建策略、越权访问、状态默认值。
 
-**验收**: `docker compose up` 一键拉起；`/healthz` 200；migration 自动执行；`make test-server` 全绿；Flutter app 可在模拟器启动显示壳页面。
+App：
 
----
+- 宠物创建/领养页。
+- 宠物主页壳：头像/形象、名字、心情、等级、亲密度。
+- provider/repository 分层，不在 UI 直接调 Dio。
 
-## W2 账号体系（auth）
+验收：新用户登录后可创建宠物；重启 App 后宠物信息恢复。
 
-**目标**: A、B 能各自登录，能互相搜到。
+## W2 文本对话与 AI Gateway
 
-- migration：`users` 表（§4 基线）
-- REST：`POST /auth/sms-code`（生成 6 位数字验证码 → Redis `sms:code:{phone}` 5min TTL、限频 1/min；一期将验证码渲染为**图形验证码** base64 图片随响应下发，不对接短信服务商）、`POST /auth/login`（验证码校验 + 自动注册，JWT access 2h / refresh 30d）、`POST /auth/refresh`、`GET/PUT /users/me`、`GET /users/search?q=`
-- App：登录页（手机号 + 图形验证码图片展示 + 验证码输入；响应无图片字段时按等待短信处理，两态兼容）、首次登录引导页（选预置头像 avatar_id 1~8 + 设昵称）、token 持久化与自动刷新、我的资料页（昵称/预置头像切换）、用户搜索页
-- 测试：service 层单测 + 每端点 happy/error httptest（§7）
-- 依赖：图片渲染拟用 `base64Captcha` 或 x/image 手绘（二选一，PR 中确认）
+目标：用户能与宠物进行稳定文本对话，模型调用通过统一网关。
 
-**验收**: 闭环场景 §0.1、§0.2 通过（搜索部分）；错误码符合 1xxx/2xxx 段位；验证码生成/校验/限频/TTL 各有用例。
+服务端：
 
-**已决（2026-09）**: 一期验证码不做真实短信对接，以图形验证码代替——验证码仅存 Redis，响应携带渲染图片；生产接入短信时只改 `sms-code` 端点内部实现，契约不变。
+- migration：`pet_conversations`、`pet_messages`、`ai_call_logs`。
+- AI Gateway 接口：`CompletePetReply(ctx, input) -> output`，真实模型与 mock 实现解耦。
+- Prompt v1：系统规则、宠物 persona、成长状态、最近对话。
+- REST：`POST /api/v1/pet-conversations`、`GET /api/v1/pet-messages`、`POST /api/v1/pet-messages`。
+- 可靠性：`client_msg_id` 幂等；消息 ID 游标分页；失败写状态和错误码。
+- 统计：模型、token、延迟、错误、缓存命中字段。
 
----
+App：
 
-## W3 好友关系（contacts）
+- 宠物聊天页。
+- 本地 drift 缓存消息。
+- 发送状态机：pending -> sent/failed，失败可重试同 `client_msg_id`。
+- 打开聊天先读本地，再拉服务端增量。
 
-**目标**: 好友申请-同意闭环，双方通讯录就绪。
+验收：连续 20 轮文本对话无重复消息；模型 mock 测试可稳定通过；真实模型调用可通过配置开关启用。
 
-- migration：`friendships` 表（双向各一行，SMALLINT 状态常量）
-- REST：`POST /friends/requests`（含防重复申请、不能加自己）、`GET /friends/requests`、`POST /friends/requests/{id}/accept`（事务内写双向两行）、`POST /friends/requests/{id}/reject`（状态标记 4=rejected，不物理删除）、`GET /friends`
-- App：好友申请列表页（同意/拒绝）、通讯录页、加好友入口（复用搜索页）
-- 测试：accept 事务原子性单测；防重复/非法参数 error path
+## W3 记忆系统
 
-**验收**: 闭环场景 §0.2 全通过；重复申请返回业务错误码而非脏数据。
+目标：宠物能记住重要信息，并让用户可控。
 
----
+服务端：
 
-## W4 消息在线链路（chat 核心）
+- migration：`pet_memories`。
+- 记忆抽取：从对话中识别用户偏好、称呼、重要事件、宠物关系进展。
+- 记忆召回：按当前输入、记忆类型、最近使用时间和置信度筛选。
+- 用户控制：`GET /api/v1/pets/{id}/memories`、`DELETE /api/v1/pet-memories/{id}`。
+- 日志脱敏：prompt 和记忆日志不得泄漏 token、完整手机号等敏感信息。
 
-**目标**: 在线双端实时收发 + 持久化 + 历史分页。**一期核心，风险最高，预留缓冲。**
+App：
 
-- migration：`messages`、`conversations` 表（含 uk_client_msg_id、idx_conv_id_id）
-- WS 网关：连接管理（内存路由表）、`conn.auth`（5s 窗口，JWT 校验）、`conn.heartbeat`（30s/90s 超时断开）、JSON 帧编解码
-- 消息链路：`msg.send` → client_msg_id 幂等（唯一键冲突即返回原结果）→ 落 messages + 双方 conversations（事务）→ `msg.ack` 回发送方 → `msg.push` 推接收方（在线时）
-- REST：`GET /messages?conv_id=&cursor=&limit=20`（游标分页，禁 offset）
-- App：聊天页（`reverse: true` + `ListView.builder`）、气泡渲染（widget 测试覆盖）、drift 消息表、发送状态机 pending→sent/failed（超时 5s 重试同 client_msg_id，3 次失败）、打开会话先读本地再拉服务端增量、msg_id 去重
-- 测试：幂等/事务/游标分页 service 单测（覆盖率 ≥70%）；ws 帧编解码用例
+- 记忆页：列表、删除、空态。
+- 聊天页可展示轻量记忆形成提示。
 
-**验收**: 闭环场景 §0.3、§0.5 通过；杀进程重开历史完整；同 client_msg_id 重发不产生重复消息。
+验收：用户说“我喜欢蓝色”，后续问“你记得我喜欢什么颜色吗”能回答；用户删除该记忆后不能再召回。
 
----
+## W4 成长系统与每日回访
 
-## W5 离线可靠性与会话视图（conversation）
+目标：宠物不是聊天壳，而是会随互动成长。
 
-**目标**: 离线不丢不重，未读数/会话列表正确，多端一致。
+服务端：
 
-- migration：`offline_msgs` 表
-- 离线链路：接收方不在线 → 写 offline_msgs；`conn.auth` 成功后客户端 `msg.pull`（cursor+limit 分页）→ 拉完确认 → 服务端删 offline_msgs
-- 未读数：conversations.unread_count 维护 + `conv.unread` 推送（对方发消息/自己已读时）
-- REST：`GET /conversations`（按 updated_at 排序，含 last_msg_preview/unread_count）
-- App：会话列表页（未读角标、preview、排序）、登录后离线拉取流程、已读上报（进入聊天页清零）
-- 测试：离线补发"恰好一次"单测；未读数并发变更单测
+- migration：`pet_growth_events`，必要时补 `pet_daily_stats`。
+- 成长规则：亲密度、等级、心情、连续互动、冷却时间。
+- 成长事件：升级、关系阶段变化、心情变化、纪念日。
+- 规则必须确定性，可测试；大模型只负责表达，不直接决定核心数值。
 
-**验收**: 闭环场景 §0.4、§0.6、§0.7 通过。
+App：
 
----
+- 宠物主页展示成长状态。
+- 成长事件时间线。
+- 次日回访时展示自然的状态变化。
 
-## W6 联调、压测与收尾
+验收：多轮互动触发成长事件；重复请求不会重复加经验；服务端测试覆盖边界。
 
-**目标**: 达到 §7 全部门槛，闭环全绿。
+## W5 权益、支付地基与数据看板
 
-- `scripts/bench-ws.go`：1 万连接、1000 msg/s 压测，P99 延迟 < 500ms，内存无泄漏
-- 全链路 E2E：按 §0 场景 1~7 完整走查（自动化脚本或手工清单留档）
-- 补测试至门槛：service ≥70%、api 每端点 happy+error、协议 Schema 全覆盖
-- docker-compose 生产化（资源限制、重启策略）；README 完善（本地启动指南）
-- 修复联调发现的全部 P0/P1
+目标：产品具备商业化和运营观测的最小地基。
 
-**验收**: §0 场景 1~8 全绿；`make test-server` 全绿；golangci-lint 无告警。
+服务端：
 
----
+- migration：`entitlements`、`usage_counters`、`event_logs`。
+- 权益：免费额度、订阅额度、记忆容量、语音/高级模型开关预留。
+- 支付：预留 Apple IAP / Google Play Billing / 微信 / 支付宝收据或回调接口，不在一期硬接生产支付也要保证模型正确。
+- 埋点：激活、注册、创建宠物、首轮对话、记忆生成、次日回访、订阅页曝光。
+- 看板出口：基础 SQL 或 REST 管理接口，先满足内部观察。
 
-## 风险与待决清单
+App：
 
-| # | 事项 | 影响 | 建议 |
-|---|---|---|---|
-| 1 | W4 消息链路复杂度 | 幂等+事务+推送交织，最易出丢/重/乱序 | 单独 PR 分步交付：先持久化+ack，再 push；§9.8 要求 PR 说明推理 |
-| 2 | Flutter Windows 环境差异 | 2 名客户端为虚拟配置 | 实际以本机模拟器为准，问题随 W1 暴露 |
+- 权益状态展示。
+- 订阅页壳和额度耗尽提示。
+- 埋点上报客户端事件。
+
+验收：服务端能按用户返回权益和剩余额度；AI 对话能记录和检查额度；关键事件可查询。
+
+## W6 联调、体验打磨与语音 POC
+
+目标：把陪伴闭环跑顺，并验证下一阶段语音风险。
+
+- 全链路 E2E：按 §0 场景完整走查。
+- 性能：并发对话、超时、重试、限流、成本统计压测。
+- 体验：宠物主页、聊天页、记忆页、成长事件页视觉和状态完整。
+- 语音 POC：只做实验性短语音 ASR/TTS 或实时语音 demo，不作为一期生产验收。
+- 文档：README、接口契约、环境变量、测试说明补齐。
+
+验收：陪伴闭环全绿；测试全绿；AI Gateway mock 和真实配置路径都可跑；语音风险清单明确。
+
+## 风险与建议
+
+| 风险 | 影响 | 建议 |
+|---|---|---|
+| 继续沿 IM 主线开发 | 资源被好友/群聊消耗，宠物差异化不足 | 冻结好友需求，改做宠物会话 |
+| 过早做实时语音 | 成本、延迟、权限、弱网体验风险高 | 先文本，再短语音，最后实时语音 |
+| 记忆不可控 | 用户不信任，隐私风险高 | 记忆可查看、可删除、可追溯来源 |
+| 成长全靠模型生成 | 状态漂移，付费权益难控制 | 服务端规则决定数值，模型负责表达 |
+| AI 成本不可见 | 上线后毛利失控 | W2 起记录 token、模型、延迟、错误 |
+| 支付只做客户端 | 容易被绕过，跨端状态不一致 | 服务端 entitlement 为唯一事实源 |
