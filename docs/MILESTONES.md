@@ -131,6 +131,16 @@ App：
 
 验收：多轮互动触发成长事件；重复请求不会重复加经验；服务端测试覆盖边界。
 
+状态（W4 已交付，见 `openspec/changes/add-pet-growth`）：
+
+- migration `pet_growth_events`（`uk_pet_source_type` 幂等闸门）与 `pet_daily_stats`（连续互动与累计消息）。
+- 确定性规则（集中常量、纯函数可测）：每条宠物消息 +2 亲密度；`level = 1 + intimacy/20`；连续互动按 Asia/Shanghai 自然日累计，3/7/30 天生成里程碑；心情按距上次互动时长推导（happy/curious/sleepy/lonely）。
+- 幂等：以宠物回复消息 id 为键，重复结算不加经验、不产生重复事件。
+- REST：`GET /api/v1/pets/{id}/growth-events`；宠物状态随互动更新（`GET /pets/{id}/state`）。
+- App：成长时间线页、主页「成长」入口，宠物状态卡随互动刷新。
+- 全栈冒烟 `scripts/smoke-pet-growth.ps1`：10 轮互动 → 亲密度 ≥20、等级 ≥2 → 事件可查且含升级事件 → 2303/1001/1002。
+- TEST-GAP：真机/模拟器 UI 走查未执行（本机无 Android SDK）；跨天连续互动与心情变化由注入时钟的服务端单测覆盖，未做真实跨天验证。
+
 ## W5 权益、支付地基与数据看板
 
 目标：产品具备商业化和运营观测的最小地基。
