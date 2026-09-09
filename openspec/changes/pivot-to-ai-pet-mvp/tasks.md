@@ -9,8 +9,8 @@
 
 ## 2. 后续实现准备
 
-- [ ] 2.1 新建 `add-pet-profile` change：pets 表、宠物创建、宠物主页
-- [ ] 2.2 新建 `add-ai-gateway-pet-chat` change：AI Gateway mock、文本对话、消息持久化
+- [x] 2.1 新建 `add-pet-profile` change：pets 表、宠物创建、宠物主页（已交付，提交 c5c98c7）
+- [x] 2.2 新建 `add-ai-gateway-pet-chat` change：AI Gateway mock、文本对话、消息持久化（已交付，提交 79a9bfa / 970c590）
 - [ ] 2.3 新建 `add-pet-memory` change：记忆抽取、召回、展示、删除
 - [ ] 2.4 新建 `add-pet-growth` change：成长规则、状态变化、成长事件
 - [ ] 2.5 新建 `add-entitlement-analytics` change：权益、用量、埋点、成本统计
@@ -18,6 +18,6 @@
 
 ## 3. 验收
 
-- [ ] 3.1 后续任务不再默认扩展好友/人与人 IM 主线
-- [ ] 3.2 新增业务变更均引用 docs/LLM_DEV_GUIDE.md v2.0 对应章节
-- [ ] 3.3 每个 AI 调用相关任务均支持 mock 测试，不依赖真实模型服务
+- [x] 3.1 后续任务不再默认扩展好友/人与人 IM 主线（W1/W2 均未扩展，旧 contacts 入口保持隐藏）
+- [x] 3.2 新增业务变更均引用 docs/LLM_DEV_GUIDE.md v2.0 对应章节（W2 引用 §4 数据基线、§5 AI 链路、§9/§10、§12 红线）
+- [x] 3.3 每个 AI 调用相关任务均支持 mock 测试，不依赖真实模型服务（默认 mock provider，服务端/客户端/冒烟全链路无真实网络调用）
