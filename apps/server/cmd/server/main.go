@@ -8,6 +8,7 @@ import (
 
 	"github.com/lindaailabs/yuyan/server"
 	"github.com/lindaailabs/yuyan/server/internal/api"
+	"github.com/lindaailabs/yuyan/server/internal/pkg/ai"
 	"github.com/lindaailabs/yuyan/server/internal/pkg/config"
 	"github.com/lindaailabs/yuyan/server/internal/pkg/jwt"
 	"github.com/lindaailabs/yuyan/server/internal/pkg/logger"
@@ -52,7 +53,33 @@ func main() {
 	contactsSvc := service.NewContactsService(repo.NewFriendshipRepo(db), repo.NewUserRepo(db))
 	petSvc := service.NewPetService(repo.NewPetRepo(db))
 
-	r := api.NewRouter(api.RouterDeps{Auth: authSvc, User: userSvc, Contacts: contactsSvc, Pet: petSvc, JWT: jwtMgr})
+	// AI Gateway：模型调用唯一入口（guide §5）；provider 未配置时启动即失败，不静默降级。
+	gateway, err := ai.New(ai.Config{
+		Provider:     cfg.AIProvider,
+		TimeoutMS:    cfg.AITimeoutMS,
+		MockFailRate: cfg.AIMockFailRate,
+	})
+	if err != nil {
+		slog.Error("ai gateway init failed", "err", err)
+		os.Exit(1)
+	}
+	petRepo := repo.NewPetRepo(db)
+	convSvc := service.NewConversationService(
+		repo.NewConversationRepo(db),
+		repo.NewMessageRepo(db),
+		repo.NewAICallLogRepo(db),
+		petRepo,
+		gateway,
+	)
+
+	r := api.NewRouter(api.RouterDeps{
+		Auth:         authSvc,
+		User:         userSvc,
+		Contacts:     contactsSvc,
+		Pet:          petSvc,
+		Conversation: convSvc,
+		JWT:          jwtMgr,
+	})
 	slog.Info("http listening", "port", cfg.HTTPPort)
 	if err := r.Run(":" + cfg.HTTPPort); err != nil {
 		slog.Error("http server exited", "err", err)

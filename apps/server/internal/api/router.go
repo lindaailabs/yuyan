@@ -10,11 +10,12 @@ import (
 
 // RouterDeps 路由装配依赖（main 组装后注入）。
 type RouterDeps struct {
-	Auth     *service.AuthService
-	User     *service.UserService
-	Contacts *service.ContactsService
-	Pet      *service.PetService
-	JWT      *jwt.Manager
+	Auth         *service.AuthService
+	User         *service.UserService
+	Contacts     *service.ContactsService
+	Pet          *service.PetService
+	Conversation *service.ConversationService
+	JWT          *jwt.Manager
 }
 
 // NewRouter 装配 HTTP 路由与中间件。
@@ -52,6 +53,17 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 		petGroup.GET("/:id", petHandler.Detail)
 		petGroup.PUT("/:id", petHandler.Update)
 		petGroup.GET("/:id/state", petHandler.State)
+	}
+
+	convHandler := NewConversationHandler(deps.Conversation)
+	convGroup := v1.Group("/pet-conversations", AuthMiddleware(deps.JWT))
+	{
+		convGroup.POST("", convHandler.CreateConversation)
+	}
+	msgGroup := v1.Group("/pet-messages", AuthMiddleware(deps.JWT))
+	{
+		msgGroup.GET("", convHandler.History)
+		msgGroup.POST("", convHandler.SendMessage)
 	}
 
 	contactsHandler := NewContactsHandler(deps.Contacts)

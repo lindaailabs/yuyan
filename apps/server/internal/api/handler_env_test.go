@@ -17,6 +17,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/lindaailabs/yuyan/server"
+	"github.com/lindaailabs/yuyan/server/internal/pkg/ai"
 	"github.com/lindaailabs/yuyan/server/internal/pkg/jwt"
 	"github.com/lindaailabs/yuyan/server/internal/repo"
 	"github.com/lindaailabs/yuyan/server/internal/service"
@@ -67,7 +68,31 @@ func newHandlerEnv(t *testing.T) *handlerEnv {
 	contactsSvc := service.NewContactsService(repo.NewFriendshipRepo(gdb), repo.NewUserRepo(gdb))
 	petSvc := service.NewPetService(repo.NewPetRepo(gdb))
 
-	return &handlerEnv{r: NewRouter(RouterDeps{Auth: authSvc, User: userSvc, Contacts: contactsSvc, Pet: petSvc, JWT: jwtMgr}), mr: mr, rdb: rdb}
+	// AI Gateway 用 mock provider：API 测试同样不依赖真实模型（guide §10）。
+	gateway, err := ai.New(ai.Config{Provider: ai.ProviderMock, TimeoutMS: 2000})
+	if err != nil {
+		t.Fatalf("ai gateway: %v", err)
+	}
+	convSvc := service.NewConversationService(
+		repo.NewConversationRepo(gdb),
+		repo.NewMessageRepo(gdb),
+		repo.NewAICallLogRepo(gdb),
+		repo.NewPetRepo(gdb),
+		gateway,
+	)
+
+	return &handlerEnv{
+		r: NewRouter(RouterDeps{
+			Auth:         authSvc,
+			User:         userSvc,
+			Contacts:     contactsSvc,
+			Pet:          petSvc,
+			Conversation: convSvc,
+			JWT:          jwtMgr,
+		}),
+		mr:  mr,
+		rdb: rdb,
+	}
 }
 
 // envelope 统一响应包裹（测试解析用）。

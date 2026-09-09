@@ -5,6 +5,7 @@ package config
 import (
 	"os"
 	"regexp"
+	"strconv"
 )
 
 // Config 服务运行配置。
@@ -15,18 +16,51 @@ type Config struct {
 	JWTSecret string // JWT HS256 签名密钥（JWT_SECRET 注入，禁硬编码 guide §9.3）
 	LogLevel  string // 日志级别：debug/info/warn/error
 	AppEnv    string // 运行环境：dev/prod
+
+	AIProvider     string  // AI Gateway provider：mock（默认）；未实现取值启动即失败
+	AITimeoutMS    int     // 单次模型调用超时（毫秒）
+	AIMockFailRate float64 // 仅 mock 生效：注入失败率，用于验证兜底路径
 }
 
 // Load 从环境变量加载配置，未设置的项使用默认值。
 func Load() Config {
 	return Config{
-		HTTPPort:  getenv("HTTP_PORT", "8080"),
-		MySQLDSN:  getenv("MYSQL_DSN", "root:yuyan123@tcp(127.0.0.1:3306)/yuyan?charset=utf8mb4&parseTime=True&loc=Local"),
-		RedisAddr: getenv("REDIS_ADDR", "127.0.0.1:6379"),
-		JWTSecret: getenv("JWT_SECRET", "dev-only-secret-change-me"),
-		LogLevel:  getenv("LOG_LEVEL", "info"),
-		AppEnv:    getenv("APP_ENV", "dev"),
+		HTTPPort:       getenv("HTTP_PORT", "8080"),
+		MySQLDSN:       getenv("MYSQL_DSN", "root:yuyan123@tcp(127.0.0.1:3306)/yuyan?charset=utf8mb4&parseTime=True&loc=Local"),
+		RedisAddr:      getenv("REDIS_ADDR", "127.0.0.1:6379"),
+		JWTSecret:      getenv("JWT_SECRET", "dev-only-secret-change-me"),
+		LogLevel:       getenv("LOG_LEVEL", "info"),
+		AppEnv:         getenv("APP_ENV", "dev"),
+		AIProvider:     getenv("AI_PROVIDER", "mock"),
+		AITimeoutMS:    getenvInt("AI_TIMEOUT_MS", 8000),
+		AIMockFailRate: getenvFloat("AI_MOCK_FAIL_RATE", 0),
 	}
+}
+
+// getenvInt 读取整型环境变量，非法值回退默认值。
+func getenvInt(key string, def int) int {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		return def
+	}
+	return n
+}
+
+// getenvFloat 读取浮点环境变量，非法值回退默认值。
+func getenvFloat(key string, def float64) float64 {
+	v := os.Getenv(key)
+	if v == "" {
+		return def
+	}
+	f, err := strconv.ParseFloat(v, 64)
+	if err != nil {
+		return def
+	}
+	return f
 }
 
 func getenv(key, def string) string {
@@ -45,5 +79,8 @@ func (c Config) SafeString() string {
 		" mysql=" + dsnPasswordRe.ReplaceAllString(c.MySQLDSN, ":***@") +
 		" redis=" + c.RedisAddr +
 		" log=" + c.LogLevel +
-		" env=" + c.AppEnv
+		" env=" + c.AppEnv +
+		" ai_provider=" + c.AIProvider +
+		" ai_timeout_ms=" + strconv.Itoa(c.AITimeoutMS) +
+		" ai_mock_fail_rate=" + strconv.FormatFloat(c.AIMockFailRate, 'f', 2, 64)
 }
