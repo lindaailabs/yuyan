@@ -16,6 +16,7 @@ type RouterDeps struct {
 	Pet          *service.PetService
 	Conversation *service.ConversationService
 	Memory       *service.MemoryService
+	Growth       *service.GrowthService
 	JWT          *jwt.Manager
 }
 
@@ -48,6 +49,7 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 
 	petHandler := NewPetHandler(deps.Pet)
 	memHandler := NewMemoryHandler(deps.Memory)
+	growthHandler := NewGrowthHandler(deps.Growth)
 	petGroup := v1.Group("/pets", AuthMiddleware(deps.JWT))
 	{
 		petGroup.POST("", petHandler.Create)
@@ -56,6 +58,7 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 		petGroup.PUT("/:id", petHandler.Update)
 		petGroup.GET("/:id/state", petHandler.State)
 		petGroup.GET("/:id/memories", memHandler.List)
+		petGroup.GET("/:id/growth-events", growthHandler.List)
 	}
 	memGroup := v1.Group("/pet-memories", AuthMiddleware(deps.JWT))
 	{

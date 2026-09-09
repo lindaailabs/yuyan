@@ -65,12 +65,14 @@ func main() {
 	}
 	petRepo := repo.NewPetRepo(db)
 	memSvc := service.NewMemoryService(repo.NewMemoryRepo(db), petRepo)
+	growthSvc := service.NewGrowthService(repo.NewGrowthRepo(db), petRepo, nil)
 	convSvc := service.NewConversationService(
 		repo.NewConversationRepo(db),
 		repo.NewMessageRepo(db),
 		repo.NewAICallLogRepo(db),
 		petRepo,
 		memSvc,
+		growthSvc,
 		gateway,
 	)
 
@@ -81,6 +83,7 @@ func main() {
 		Pet:          petSvc,
 		Conversation: convSvc,
 		Memory:       memSvc,
+		Growth:       growthSvc,
 		JWT:          jwtMgr,
 	})
 	slog.Info("http listening", "port", cfg.HTTPPort)

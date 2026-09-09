@@ -53,6 +53,7 @@ func newConversationEnv(t *testing.T, mockFailRate float64) *conversationEnv {
 		repo.NewAICallLogRepo(gdb),
 		petRepo,
 		NewMemoryService(repo.NewMemoryRepo(gdb), petRepo),
+		NewGrowthService(repo.NewGrowthRepo(gdb), petRepo, nil),
 		gateway,
 	)
 	return &conversationEnv{

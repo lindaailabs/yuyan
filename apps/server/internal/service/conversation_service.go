@@ -34,12 +34,13 @@ const (
 // ConversationService 宠物对话业务逻辑：会话、消息、AI Gateway 编排与用量落库。
 // AI 调用不进事务：单行写入本身原子，模型 RT 不占用 DB 连接与行锁。
 type ConversationService struct {
-	conv *repo.ConversationRepo
-	msgs *repo.MessageRepo
-	logs *repo.AICallLogRepo
-	pets *repo.PetRepo
-	mem  *MemoryService
-	gw   ai.Gateway
+	conv   *repo.ConversationRepo
+	msgs   *repo.MessageRepo
+	logs   *repo.AICallLogRepo
+	pets   *repo.PetRepo
+	mem    *MemoryService
+	growth *GrowthService
+	gw     ai.Gateway
 }
 
 // NewConversationService 构造。mem 为 nil 时跳过记忆抽取与召回（便于单测裁剪）。
@@ -49,9 +50,18 @@ func NewConversationService(
 	logs *repo.AICallLogRepo,
 	pets *repo.PetRepo,
 	mem *MemoryService,
+	growth *GrowthService,
 	gw ai.Gateway,
 ) *ConversationService {
-	return &ConversationService{conv: conv, msgs: msgs, logs: logs, pets: pets, mem: mem, gw: gw}
+	return &ConversationService{
+		conv:   conv,
+		msgs:   msgs,
+		logs:   logs,
+		pets:   pets,
+		mem:    mem,
+		growth: growth,
+		gw:     gw,
+	}
 }
 
 // GetOrCreateConversation 创建或获取「当前用户 + 宠物」的会话。
@@ -202,6 +212,9 @@ func (s *ConversationService) SendMessage(ctx context.Context, uid int64, in *mo
 	if err := s.msgs.Create(ctx, assistantMsg); err != nil {
 		return nil, fmt.Errorf("insert assistant message: %w", err)
 	}
+	// 成长结算：确定性规则，以宠物回复消息 id 为幂等键（重复结算不加经验）。
+	s.applyGrowth(ctx, uid, pet.ID, assistantMsg.ID, aiErr != nil)
+
 	// 会话预览与调用日志失败不影响本次对话结果，仅告警。
 	if err := s.conv.UpdateLastMessage(ctx, conv.ID, assistantMsg.ID, assistantMsg.Content); err != nil {
 		slog.Warn("update conversation last message failed", "err", err, "conv_id", conv.ID)
@@ -217,6 +230,16 @@ func (s *ConversationService) SendMessage(ctx context.Context, uid int64, in *mo
 		Streaming:        false, // 流式留待 protocol-v2
 		Usage:            usageOf(res, aiErr),
 	}, nil
+}
+
+// applyGrowth 结算成长（未配置成长服务时跳过；失败仅告警，不影响对话）。
+func (s *ConversationService) applyGrowth(ctx context.Context, uid, petID, msgID int64, aiFailed bool) {
+	if s.growth == nil {
+		return
+	}
+	if _, err := s.growth.ApplyInteraction(ctx, uid, petID, msgID, aiFailed); err != nil {
+		slog.Warn("growth apply failed", "err", err, "pet_id", petID)
+	}
 }
 
 // extractMemories 抽取本轮新形成的记忆（未配置记忆服务时返回 nil）。

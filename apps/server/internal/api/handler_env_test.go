@@ -74,12 +74,14 @@ func newHandlerEnv(t *testing.T) *handlerEnv {
 		t.Fatalf("ai gateway: %v", err)
 	}
 	memSvc := service.NewMemoryService(repo.NewMemoryRepo(gdb), repo.NewPetRepo(gdb))
+	growthSvc := service.NewGrowthService(repo.NewGrowthRepo(gdb), repo.NewPetRepo(gdb), nil)
 	convSvc := service.NewConversationService(
 		repo.NewConversationRepo(gdb),
 		repo.NewMessageRepo(gdb),
 		repo.NewAICallLogRepo(gdb),
 		repo.NewPetRepo(gdb),
 		memSvc,
+		growthSvc,
 		gateway,
 	)
 
@@ -91,6 +93,7 @@ func newHandlerEnv(t *testing.T) *handlerEnv {
 			Pet:          petSvc,
 			Conversation: convSvc,
 			Memory:       memSvc,
+			Growth:       growthSvc,
 			JWT:          jwtMgr,
 		}),
 		mr:  mr,
