@@ -73,6 +73,15 @@ App：
 
 验收：连续 20 轮文本对话无重复消息；模型 mock 测试可稳定通过；真实模型调用可通过配置开关启用。
 
+状态（W2 已交付，见 `openspec/changes/add-ai-gateway-pet-chat`）：
+
+- `pet_conversations` / `pet_messages` / `ai_call_logs` 三张表与 migration。
+- `internal/pkg/ai`：Gateway 接口 + 默认 mock provider（`AI_PROVIDER`）+ Prompt v1（分层与双上限）+ 超时重试与兜底。
+- REST：`POST /pet-conversations`、`POST /pet-messages`、`GET /pet-messages`（游标分页）。
+- App：聊天页 + drift 本地消息缓存（本地优先 + 增量同步）+ 发送中/失败重试状态机。
+- 全栈冒烟 `scripts/smoke-pet-chat.ps1`：20 轮无重复、重放幂等、游标分页不重不漏、错误码 2301~2303/1001/1002。
+- TEST-GAP：本地库当前为进程内内存库（未接入 path_provider），跨进程恢复由服务端历史拉取兜底；真机/模拟器 UI 走查因本机无 Android SDK 未执行。
+
 ## W3 记忆系统
 
 目标：宠物能记住重要信息，并让用户可控。
