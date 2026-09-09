@@ -6,12 +6,14 @@ import '../data/remote/dio_api_client.dart';
 import '../data/repository/auth_repository.dart';
 import '../data/repository/contacts_repository.dart';
 import '../data/repository/pet_chat_repository.dart';
+import '../data/repository/pet_memory_repository.dart';
 import '../data/repository/pet_repository.dart';
 import 'auth/auth_controller.dart';
 import 'auth/auth_state.dart';
 import 'auth/token_storage.dart';
 import 'chat/chat_controller.dart';
 import 'contacts/contacts_controller.dart';
+import 'memory/memory_controller.dart';
 import 'pet/pet_controller.dart';
 
 /// API 基地址：默认 Android 模拟器宿主机 loopback；真机/桌面用 --dart-define=API_BASE_URL= 覆盖。
@@ -85,6 +87,23 @@ chatControllerProvider =
       );
       controller.open();
       return controller;
+    });
+
+/// 记忆仓库（查看与删除长期记忆）。
+final Provider<PetMemoryRepository> petMemoryRepositoryProvider =
+    Provider<PetMemoryRepository>(
+      (ref) => PetMemoryRepository(ref.watch(apiClientProvider)),
+    );
+
+/// 记忆页状态机（按宠物 id 分实例）。
+final StateNotifierProviderFamily<MemoryController, MemoryState, int>
+memoryControllerProvider =
+    StateNotifierProvider.family<MemoryController, MemoryState, int>(
+        (ref, petId) {
+      return MemoryController(
+        ref.watch(petMemoryRepositoryProvider),
+        petId: petId,
+      );
     });
 
 /// 宠物域仓库。

@@ -1,3 +1,5 @@
+import 'pet_memory.dart';
+
 /// 消息角色（服务端 role 字段）。
 enum PetMessageRole {
   user,
@@ -144,6 +146,7 @@ class SendMessageResult {
     required this.conversationId,
     required this.userMessage,
     this.assistantMessage,
+    this.newMemories = const [],
     this.streaming = false,
     this.usage = const AiUsage(),
   });
@@ -153,6 +156,9 @@ class SendMessageResult {
 
   /// 为空表示回复尚未生成（幂等重放），UI 按待回复处理。
   final PetMessage? assistantMessage;
+
+  /// 本轮新形成的长期记忆（聊天页轻量提示）。
+  final List<PetMemory> newMemories;
   final bool streaming;
   final AiUsage usage;
 
@@ -167,6 +173,9 @@ class SendMessageResult {
             : PetMessage.fromJson(
                 json['assistant_message'] as Map<String, dynamic>,
               ),
+        newMemories: (json['new_memories'] as List<dynamic>? ?? const [])
+            .map((e) => PetMemory.fromJson(e as Map<String, dynamic>))
+            .toList(),
         streaming: json['streaming'] as bool? ?? false,
         usage: AiUsage.fromJson(
           json['usage'] as Map<String, dynamic>? ?? const {},

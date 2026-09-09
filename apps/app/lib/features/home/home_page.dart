@@ -48,6 +48,7 @@ class HomePage extends ConsumerWidget {
                 error: state.error,
                 onCreate: () => context.go('/pet/create'),
                 onChat: () => context.go('/chat/${state.current!.id}'),
+                onMemory: () => context.go('/memories/${state.current!.id}'),
               ),
           ],
         ),
@@ -111,12 +112,14 @@ class _PetHomeView extends StatelessWidget {
     required this.pet,
     required this.onCreate,
     required this.onChat,
+    required this.onMemory,
     this.error,
   });
 
   final PetProfile pet;
   final VoidCallback onCreate;
   final VoidCallback onChat;
+  final VoidCallback onMemory;
   final String? error;
 
   @override
@@ -170,7 +173,7 @@ class _PetHomeView extends StatelessWidget {
         _ActionButton(
           icon: Icons.psychology_alt_outlined,
           label: Zh.homePetMemory,
-          message: Zh.homePetMemoryComing,
+          onTap: onMemory,
         ),
         const SizedBox(height: 12),
         _ActionButton(

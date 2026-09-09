@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/model/pet_memory.dart';
 import '../../data/model/pet_message.dart';
 import '../../data/remote/api_exception.dart';
 import '../../data/repository/pet_chat_repository.dart';
@@ -10,6 +11,7 @@ import 'client_msg_id.dart';
 class ChatState {
   const ChatState({
     this.messages = const [],
+    this.newMemories = const [],
     this.loading = false,
     this.sending = false,
     this.syncing = false,
@@ -18,6 +20,9 @@ class ChatState {
   });
 
   final List<PetMessage> messages;
+
+  /// 最近一轮新形成的长期记忆（聊天页轻量提示）。
+  final List<PetMemory> newMemories;
 
   /// 首次加载中。
   final bool loading;
@@ -35,6 +40,7 @@ class ChatState {
 
   ChatState copyWith({
     List<PetMessage>? messages,
+    List<PetMemory>? newMemories,
     bool? loading,
     bool? sending,
     bool? syncing,
@@ -44,6 +50,7 @@ class ChatState {
   }) =>
       ChatState(
         messages: messages ?? this.messages,
+        newMemories: newMemories ?? this.newMemories,
         loading: loading ?? this.loading,
         sending: sending ?? this.sending,
         syncing: syncing ?? this.syncing,
@@ -169,6 +176,7 @@ class ChatController extends StateNotifier<ChatState> {
       }
       state = state.copyWith(
         messages: await _repo.localMessages(convId),
+        newMemories: res.newMemories,
         sending: false,
       );
       return true;

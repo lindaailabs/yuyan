@@ -166,4 +166,10 @@ class DioApiClient implements ApiClient {
     final resp = await _dio.put(path, data: body);
     return _unwrap(resp.data);
   }
+
+  @override
+  Future<Map<String, dynamic>> delete(String path) async {
+    final resp = await _dio.delete(path);
+    return _unwrap(resp.data);
+  }
 }

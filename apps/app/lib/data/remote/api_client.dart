@@ -8,4 +8,5 @@ abstract class ApiClient {
 
   Future<Map<String, dynamic>> post(String path, {Map<String, dynamic>? body});
   Future<Map<String, dynamic>> put(String path, {Map<String, dynamic>? body});
+  Future<Map<String, dynamic>> delete(String path);
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/chat/chat_controller.dart';
 import '../../core/l10n/zh.dart';
 import '../../core/providers.dart';
+import '../../data/model/pet_memory.dart';
 import '../../data/model/pet_message.dart';
 import '../shared/avatar_widget.dart';
 
@@ -138,6 +139,8 @@ class _ChatPageState extends ConsumerState<ChatPage>
       body: Column(
         children: [
           if (state.error != null) _ErrorBanner(message: state.error!),
+          if (state.newMemories.isNotEmpty)
+            _MemoryBanner(memories: state.newMemories),
           Expanded(child: _buildBody(state, petName)),
           _InputBar(
             controller: _inputCtrl,
@@ -217,6 +220,37 @@ class _ErrorBanner extends StatelessWidget {
             child: Text(
               message,
               style: const TextStyle(fontSize: 12, color: _danger),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 新记忆形成提示（MILESTONES W3：聊天页可展示轻量记忆形成提示）。
+class _MemoryBanner extends StatelessWidget {
+  const _MemoryBanner({required this.memories});
+
+  final List<PetMemory> memories;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = memories.map((m) => m.content).join('、');
+    return Container(
+      width: double.infinity,
+      color: _primary.withValues(alpha: 0.08),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.psychology_alt_rounded, size: 16, color: _primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '${Zh.chatNewMemory}：$text',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12, color: _primary),
             ),
           ),
         ],

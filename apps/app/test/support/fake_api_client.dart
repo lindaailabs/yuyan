@@ -39,4 +39,7 @@ class FakeApiClient implements ApiClient {
   Future<Map<String, dynamic>> put(String path,
           {Map<String, dynamic>? body}) =>
       _run('PUT', path);
+
+  @override
+  Future<Map<String, dynamic>> delete(String path) => _run('DELETE', path);
 }

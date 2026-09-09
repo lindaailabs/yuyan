@@ -92,6 +92,18 @@ class Zh {
   static const String chatLoadMore = '加载更多';
   static const String chatSyncing = '正在同步新消息…';
 
+  // 记忆
+  static const String memoryTitle = '它记住的事';
+  static const String memoryEmpty = '还没有记住任何事';
+  static const String memoryEmptyHint = '和它多聊聊，我会把你的喜好和习惯记下来';
+  static const String memoryTypeLabel = '类型';
+  static const String memoryConfidence = '置信度';
+  static const String memoryDeleteTitle = '删除这条记忆？';
+  static const String memoryDeleteBody = '删除后它将不再记得这件事，也不会再用它来陪你聊天。';
+  static const String memoryDeleteConfirm = '删除';
+  static const String memoryDeleteFailed = '删除失败，请重试';
+  static const String chatNewMemory = '记住了';
+
   // 错误通用
   static const String errorOccurred = '操作失败，请重试';
 }
