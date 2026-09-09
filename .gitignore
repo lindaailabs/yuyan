@@ -1,5 +1,6 @@
 # IDE / AI 工具本地配置
 .trae/
+.codebuddy/
 .idea/
 .vscode/
 
