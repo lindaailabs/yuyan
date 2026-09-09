@@ -4,47 +4,230 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/zh.dart';
 import '../../core/providers.dart';
+import '../../data/model/pet.dart';
+import '../shared/avatar_widget.dart';
 
-/// 主页（W2：会话占位 + 资料/搜索/通讯录/申请入口；W5 替换为会话列表）。
+/// AI 宠物主页：一期主线从 IM 会话切到宠物陪伴闭环。
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final requests = ref.watch(
-        contactsControllerProvider.select((s) => s.requests.length));
+    final state = ref.watch(petControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(Zh.homeTitle),
         actions: [
           IconButton(
-            icon: const Icon(Icons.contacts),
-            tooltip: Zh.homeContacts,
-            onPressed: () => context.go('/contacts'),
-          ),
-          Badge.count(
-            count: requests,
-            isLabelVisible: requests > 0,
-            child: IconButton(
-              icon: const Icon(Icons.person_add_alt),
-              tooltip: Zh.homeRequests,
-              onPressed: () => context.go('/requests'),
-            ),
-          ),
-          IconButton(
             icon: const Icon(Icons.person),
             tooltip: Zh.homeProfile,
             onPressed: () => context.go('/profile'),
           ),
-          IconButton(
-            icon: const Icon(Icons.person_search),
-            tooltip: Zh.homeSearch,
-            onPressed: () => context.go('/search'),
-          ),
         ],
       ),
-      body: const Center(child: Text(Zh.homePlaceholder)),
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(petControllerProvider.notifier).load(),
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            if (state.loading)
+              const Padding(
+                padding: EdgeInsets.only(top: 80),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (state.current == null)
+              _EmptyPetView(
+                error: state.error,
+                onCreate: () => context.go('/pet/create'),
+                onRetry: () => ref.read(petControllerProvider.notifier).load(),
+              )
+            else
+              _PetHomeView(
+                pet: state.current!,
+                error: state.error,
+                onCreate: () => context.go('/pet/create'),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyPetView extends StatelessWidget {
+  const _EmptyPetView({
+    required this.onCreate,
+    required this.onRetry,
+    this.error,
+  });
+
+  final VoidCallback onCreate;
+  final VoidCallback onRetry;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const SizedBox(height: 48),
+        const Icon(Icons.auto_awesome, size: 72),
+        const SizedBox(height: 24),
+        Text(
+          Zh.homePetEmptyTitle,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          Zh.homePetEmptyBody,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 20),
+          Text(error!, textAlign: TextAlign.center),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh),
+            label: const Text(Zh.retry),
+          ),
+        ],
+        const SizedBox(height: 28),
+        FilledButton.icon(
+          onPressed: onCreate,
+          icon: const Icon(Icons.add),
+          label: const Text(Zh.homePetCreate),
+        ),
+      ],
+    );
+  }
+}
+
+class _PetHomeView extends StatelessWidget {
+  const _PetHomeView({required this.pet, required this.onCreate, this.error});
+
+  final PetProfile pet;
+  final VoidCallback onCreate;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            AvatarWidget(avatarId: pet.avatarId, size: 88),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(pet.name, style: theme.textTheme.headlineSmall),
+                  const SizedBox(height: 6),
+                  Text(pet.species, style: theme.textTheme.bodyMedium),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: onCreate,
+              icon: const Icon(Icons.add),
+              tooltip: Zh.homePetCreate,
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _MetricTile(label: Zh.homePetMood, value: pet.mood),
+            _MetricTile(label: Zh.homePetLevel, value: '${pet.level}'),
+            _MetricTile(label: Zh.homePetIntimacy, value: '${pet.intimacy}'),
+          ],
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 16),
+          Text(error!, textAlign: TextAlign.center),
+        ],
+        const SizedBox(height: 28),
+        _ActionButton(
+          icon: Icons.chat_bubble_outline,
+          label: Zh.homePetChat,
+          message: Zh.homePetChatComing,
+        ),
+        const SizedBox(height: 12),
+        _ActionButton(
+          icon: Icons.psychology_alt_outlined,
+          label: Zh.homePetMemory,
+          message: Zh.homePetMemoryComing,
+        ),
+        const SizedBox(height: 12),
+        _ActionButton(
+          icon: Icons.trending_up,
+          label: Zh.homePetGrowth,
+          message: Zh.homePetGrowthComing,
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 104,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: Theme.of(context).textTheme.labelMedium),
+              const SizedBox(height: 8),
+              Text(value, style: Theme.of(context).textTheme.titleMedium),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.message,
+  });
+
+  final IconData icon;
+  final String label;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: () =>
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(message))),
+      icon: Icon(icon),
+      label: Text(label),
     );
   }
 }

@@ -26,13 +26,28 @@ class Zh {
   static const String onboardingSubmit = '进入语燕';
   static const String onboardingBadNickname = '昵称须为 1~20 个字符';
 
-  // 主页
+  // 宠物主页
   static const String homeTitle = '语燕';
-  static const String homePlaceholder = '会话列表将在这里出现';
   static const String homeProfile = '我的资料';
-  static const String homeSearch = '搜索用户';
-  static const String homeContacts = '通讯录';
-  static const String homeRequests = '好友申请';
+  static const String homePetCreate = '领养宠物';
+  static const String homePetEmptyTitle = '还没有宠物';
+  static const String homePetEmptyBody = '先领养一只会记得你、会成长的 AI 宠物。';
+  static const String homePetMood = '心情';
+  static const String homePetLevel = '等级';
+  static const String homePetIntimacy = '亲密度';
+  static const String homePetChat = '对话';
+  static const String homePetMemory = '记忆';
+  static const String homePetGrowth = '成长';
+  static const String homePetChatComing = '文本对话将在 W2 接入';
+  static const String homePetMemoryComing = '记忆系统将在 W3 接入';
+  static const String homePetGrowthComing = '成长事件将在 W4 接入';
+
+  // 宠物创建
+  static const String petCreateTitle = '领养宠物';
+  static const String petNameHint = '给它起个名字';
+  static const String petPickAvatar = '选择外观';
+  static const String petCreateSubmit = '开始陪伴';
+  static const String petBadName = '宠物名字须为 1~20 个字符';
 
   // 资料页
   static const String profileTitle = '我的资料';
@@ -42,7 +57,10 @@ class Zh {
   static const String profileSave = '保存';
   static const String profileLogout = '退出登录';
 
-  // 搜索
+  // 搜索（早期 IM 遗留入口）
+  static const String homeSearch = '搜索用户';
+  static const String homeContacts = '通讯录';
+  static const String homeRequests = '好友申请';
   static const String searchTitle = '搜索用户';
   static const String searchHint = '输入对方手机号';
   static const String searchSubmit = '搜索';
@@ -50,12 +68,12 @@ class Zh {
   static const String searchAddFriend = '加好友';
   static const String searchRequestSent = '已申请';
 
-  // 通讯录
+  // 通讯录（早期 IM 遗留入口）
   static const String contactsTitle = '通讯录';
   static const String contactsEmpty = '还没有好友，去搜索添加吧';
   static const String contactsGoAdd = '去添加好友';
 
-  // 好友申请
+  // 好友申请（早期 IM 遗留入口）
   static const String requestsTitle = '好友申请';
   static const String requestsEmpty = '暂无新的好友申请';
   static const String requestsAccept = '同意';

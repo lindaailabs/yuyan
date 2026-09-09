@@ -4,10 +4,12 @@ import '../data/remote/api_client.dart';
 import '../data/remote/dio_api_client.dart';
 import '../data/repository/auth_repository.dart';
 import '../data/repository/contacts_repository.dart';
+import '../data/repository/pet_repository.dart';
 import 'auth/auth_controller.dart';
 import 'auth/auth_state.dart';
 import 'auth/token_storage.dart';
 import 'contacts/contacts_controller.dart';
+import 'pet/pet_controller.dart';
 
 /// API 基地址：默认 Android 模拟器宿主机 loopback；真机/桌面用 --dart-define=API_BASE_URL= 覆盖。
 const apiBaseUrl = String.fromEnvironment(
@@ -16,7 +18,9 @@ const apiBaseUrl = String.fromEnvironment(
 );
 
 /// Token 安全存储。
-final tokenStorageProvider = Provider<TokenStorage>((ref) => SecureTokenStorage());
+final tokenStorageProvider = Provider<TokenStorage>(
+  (ref) => SecureTokenStorage(),
+);
 
 /// ApiClient：统一包裹解析 + token 注入 + 401 刷新。
 /// 显式变量类型：apiClient ↔ authController 存在运行期延迟引用，避免顶层类型推断环。
@@ -32,29 +36,47 @@ final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
 
 /// 账号域仓库。
 final Provider<AuthRepository> authRepositoryProvider =
-    Provider<AuthRepository>((ref) => AuthRepository(ref.watch(apiClientProvider)));
+    Provider<AuthRepository>(
+      (ref) => AuthRepository(ref.watch(apiClientProvider)),
+    );
 
 /// 认证状态机（provider 首次被读取时启动恢复流程）。
 final StateNotifierProvider<AuthController, AuthState> authControllerProvider =
     StateNotifierProvider<AuthController, AuthState>((ref) {
-  final controller = AuthController(
-    ref.watch(authRepositoryProvider),
-    ref.watch(tokenStorageProvider),
-  );
-  controller.init();
-  return controller;
-});
+      final controller = AuthController(
+        ref.watch(authRepositoryProvider),
+        ref.watch(tokenStorageProvider),
+      );
+      controller.init();
+      return controller;
+    });
 
-/// 好友域仓库。
+/// 宠物域仓库。
+final Provider<PetRepository> petRepositoryProvider = Provider<PetRepository>(
+  (ref) => PetRepository(ref.watch(apiClientProvider)),
+);
+
+/// 宠物主页状态机。
+final StateNotifierProvider<PetController, PetHomeState> petControllerProvider =
+    StateNotifierProvider<PetController, PetHomeState>((ref) {
+      final controller = PetController(ref.watch(petRepositoryProvider));
+      controller.load();
+      return controller;
+    });
+
+/// 好友域仓库（早期 IM 遗留能力，非一期 AI 宠物主线）。
 final Provider<ContactsRepository> contactsRepositoryProvider =
     Provider<ContactsRepository>(
-        (ref) => ContactsRepository(ref.watch(apiClientProvider)));
+      (ref) => ContactsRepository(ref.watch(apiClientProvider)),
+    );
 
-/// 好友域状态机（provider 首次被读取时预载双列表）。
+/// 好友域状态机（仅旧页面使用，主页不再预载）。
 final StateNotifierProvider<ContactsController, ContactsState>
-    contactsControllerProvider =
+contactsControllerProvider =
     StateNotifierProvider<ContactsController, ContactsState>((ref) {
-  final controller = ContactsController(ref.watch(contactsRepositoryProvider));
-  controller.loadAll();
-  return controller;
-});
+      final controller = ContactsController(
+        ref.watch(contactsRepositoryProvider),
+      );
+      controller.loadAll();
+      return controller;
+    });

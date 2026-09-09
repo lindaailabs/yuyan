@@ -13,11 +13,12 @@ type RouterDeps struct {
 	Auth     *service.AuthService
 	User     *service.UserService
 	Contacts *service.ContactsService
+	Pet      *service.PetService
 	JWT      *jwt.Manager
 }
 
 // NewRouter 装配 HTTP 路由与中间件。
-// /api/v1/auth/* 匿名可访问；/api/v1/users/* 须经 AuthMiddleware。
+// /api/v1/auth/* 匿名可访问；业务端点须经 AuthMiddleware。
 func NewRouter(deps RouterDeps) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -41,6 +42,16 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 		userGroup.GET("/me", userHandler.Me)
 		userGroup.PUT("/me", userHandler.UpdateMe)
 		userGroup.GET("/search", userHandler.Search)
+	}
+
+	petHandler := NewPetHandler(deps.Pet)
+	petGroup := v1.Group("/pets", AuthMiddleware(deps.JWT))
+	{
+		petGroup.POST("", petHandler.Create)
+		petGroup.GET("", petHandler.List)
+		petGroup.GET("/:id", petHandler.Detail)
+		petGroup.PUT("/:id", petHandler.Update)
+		petGroup.GET("/:id/state", petHandler.State)
 	}
 
 	contactsHandler := NewContactsHandler(deps.Contacts)

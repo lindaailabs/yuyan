@@ -1,0 +1,16 @@
+-- AI 宠物档案：pets 表（LLM_DEV_GUIDE.md §4）。
+CREATE TABLE pets (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  name VARCHAR(20) NOT NULL,
+  species VARCHAR(32) NOT NULL DEFAULT 'swallow',
+  avatar_id SMALLINT NOT NULL DEFAULT 1,
+  persona TEXT NULL,
+  level INT NOT NULL DEFAULT 1,
+  intimacy INT NOT NULL DEFAULT 0,
+  mood VARCHAR(32) NOT NULL DEFAULT 'curious',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_user_id (user_id),
+  KEY idx_user_updated (user_id, updated_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
