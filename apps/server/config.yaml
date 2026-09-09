@@ -1,0 +1,12 @@
+# 默认 dev 配置：APP_ENV 未设置，或 config.{env}.yaml 缺失时回退本文件。
+# 本地开发若用 test 环境，请改维护 config.test.yaml；本文件作为最小兜底。
+http_port: "8080"
+log_level: "info"
+jwt_secret: "dev-only-secret-change-me"
+mysql_dsn: "root:yuyan123@tcp(127.0.0.1:3306)/yuyan?charset=utf8mb4&parseTime=True&loc=Local"
+redis_addr: "127.0.0.1:6379"
+ai_provider: "mock"
+ai_timeout_ms: 8000
+ai_mock_fail_rate: 0
+ai_base_url: "https://api.openai.com/v1"
+ai_model: "gpt-3.5-turbo"

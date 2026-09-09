@@ -39,8 +39,8 @@ func newMemoryEnv(t *testing.T) *memoryEnv {
 	}
 	petRepo := repo.NewPetRepo(gdb)
 	return &memoryEnv{
-		svc:  NewMemoryService(repo.NewMemoryRepo(gdb), petRepo),
-		pets: NewPetService(petRepo),
+		svc:  NewMemoryService(repo.NewMemoryRepo(gdb), petRepo, nil),
+		pets: NewPetService(petRepo, nil),
 		ur:   repo.NewUserRepo(gdb),
 		db:   repo.NewMemoryRepo(gdb),
 	}

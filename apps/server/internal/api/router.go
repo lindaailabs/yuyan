@@ -2,6 +2,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 
 	"github.com/lindaailabs/yuyan/server/internal/pkg/jwt"
@@ -17,6 +19,9 @@ type RouterDeps struct {
 	Conversation *service.ConversationService
 	Memory       *service.MemoryService
 	Growth       *service.GrowthService
+	Entitlement  *service.EntitlementService
+	Analytics     *service.AnalyticsService
+	AppEnv        string
 	JWT          *jwt.Manager
 }
 
@@ -27,6 +32,11 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 	r.Use(gin.Recovery())
 	r.Use(TraceMiddleware())
 
+	// 本地 Web 调试（Chrome）跨域：仅非生产环境放开，生产环境不注册以免暴露 CORS。
+	if deps.AppEnv != "prod" {
+		r.Use(CORSMiddleware())
+	}
+
 	r.GET("/healthz", handleHealthz)
 
 	v1 := r.Group("/api/v1")
@@ -34,7 +44,7 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 	authHandler := NewAuthHandler(deps.Auth)
 	authGroup := v1.Group("/auth")
 	{
-		authGroup.POST("/sms-code", authHandler.SendSmsCode)
+		authGroup.POST("/register", authHandler.Register)
 		authGroup.POST("/login", authHandler.Login)
 		authGroup.POST("/refresh", authHandler.Refresh)
 	}
@@ -76,6 +86,29 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 		msgGroup.POST("", convHandler.SendMessage)
 	}
 
+	entHandler := NewEntitlementHandler(deps.Entitlement)
+	analyticsHandler := NewAnalyticsHandler(deps.Analytics)
+
+	entGroup := v1.Group("/entitlements", AuthMiddleware(deps.JWT))
+	{
+		entGroup.GET("/me", entHandler.Me)
+		entGroup.POST("/sandbox-purchase", entHandler.SandboxPurchase)
+		entGroup.POST("/payments/callback", entHandler.PaymentCallback)
+	}
+
+	eventsGroup := v1.Group("/events", AuthMiddleware(deps.JWT))
+	{
+		eventsGroup.POST("", analyticsHandler.Report)
+	}
+
+	// 内部数据出口仅非生产环境注册（生产环境不暴露 /admin，避免数据外泄）。
+	if deps.AppEnv != "prod" {
+		adminGroup := v1.Group("/admin")
+		{
+			adminGroup.GET("/events", analyticsHandler.List)
+		}
+	}
+
 	contactsHandler := NewContactsHandler(deps.Contacts)
 	friendsGroup := v1.Group("/friends", AuthMiddleware(deps.JWT))
 	{
@@ -86,4 +119,24 @@ func NewRouter(deps RouterDeps) *gin.Engine {
 		friendsGroup.GET("", contactsHandler.ListFriends)
 	}
 	return r
+}
+
+// CORSMiddleware 本地调试跨域放行：回显请求 Origin，允许带凭证的预检。
+// 仅非生产环境注册（见 NewRouter），生产环境不启用。
+func CORSMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		origin := c.GetHeader("Origin")
+		if origin == "" {
+			origin = "*"
+		}
+		c.Header("Access-Control-Allow-Origin", origin)
+		c.Header("Access-Control-Allow-Credentials", "true")
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS")
+		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+		c.Next()
+	}
 }

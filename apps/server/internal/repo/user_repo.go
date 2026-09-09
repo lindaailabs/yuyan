@@ -51,10 +51,14 @@ func (r *UserRepo) FindByIDs(ctx context.Context, ids []int64) ([]model.User, er
 	return users, nil
 }
 
-// CreateUser 创建用户（登录自动注册路径，nickname 为 NULL、avatar_id 默认 1）。
-// phone 唯一冲突由 DB 唯一索引兜底，调用方（service）先查后插，竞态时返回错误。
+// CreateUser 创建用户（测试/内部装配用，nickname 为 NULL、avatar_id 默认 1、无密码）。
 func (r *UserRepo) CreateUser(ctx context.Context, phone string) (*model.User, error) {
-	u := model.User{Phone: phone, AvatarID: 1, Nickname: nil}
+	return r.CreateUserWithPassword(ctx, phone, "")
+}
+
+// CreateUserWithPassword 注册创建：写入密码哈希（空串表示无密码，兼容旧验证码账号）。
+func (r *UserRepo) CreateUserWithPassword(ctx context.Context, phone, passwordHash string) (*model.User, error) {
+	u := model.User{Phone: phone, AvatarID: 1, Nickname: nil, PasswordHash: passwordHash}
 	if err := r.db.WithContext(ctx).Create(&u).Error; err != nil {
 		return nil, fmt.Errorf("create user: %w", err)
 	}

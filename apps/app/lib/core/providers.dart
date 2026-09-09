@@ -1,10 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'app_config.dart';
 import '../data/local/app_database.dart';
 import '../data/remote/api_client.dart';
 import '../data/remote/dio_api_client.dart';
+import '../data/repository/analytics_repository.dart';
 import '../data/repository/auth_repository.dart';
 import '../data/repository/contacts_repository.dart';
+import '../data/repository/entitlement_repository.dart';
 import '../data/repository/pet_chat_repository.dart';
 import '../data/repository/pet_growth_repository.dart';
 import '../data/repository/pet_memory_repository.dart';
@@ -14,15 +17,15 @@ import 'auth/auth_state.dart';
 import 'auth/token_storage.dart';
 import 'chat/chat_controller.dart';
 import 'contacts/contacts_controller.dart';
+import 'entitlement/entitlement_controller.dart';
 import 'growth/growth_controller.dart';
 import 'memory/memory_controller.dart';
 import 'pet/pet_controller.dart';
 
-/// API 基地址：默认 Android 模拟器宿主机 loopback；真机/桌面用 --dart-define=API_BASE_URL= 覆盖。
-const apiBaseUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'http://10.0.2.2:8080/api/v1',
-);
+/// API 基地址（统一前缀）：加载顺序 --dart-define=API_BASE_URL > assets/config.json > 内置默认。
+/// 所有接口共用此前缀，改 assets/config.json 即可切换调试/打包地址，不必每次 build 都带 --dart-define。
+/// 见 core/app_config.dart。
+final apiBaseUrlProvider = Provider<String>((ref) => AppConfig.apiBaseUrl);
 
 /// Token 安全存储。
 final tokenStorageProvider = Provider<TokenStorage>(
@@ -33,7 +36,7 @@ final tokenStorageProvider = Provider<TokenStorage>(
 /// 显式变量类型：apiClient ↔ authController 存在运行期延迟引用，避免顶层类型推断环。
 final Provider<ApiClient> apiClientProvider = Provider<ApiClient>((ref) {
   return DioApiClient(
-    baseUrl: apiBaseUrl,
+    baseUrl: ref.watch(apiBaseUrlProvider),
     tokenStorage: ref.watch(tokenStorageProvider),
     // 拦截器回调延迟读取（运行期才触发，无构建期循环依赖）。
     onSessionExpired: () =>
@@ -153,4 +156,26 @@ contactsControllerProvider =
       );
       controller.loadAll();
       return controller;
+    });
+
+/// 权益与额度仓库。
+final Provider<EntitlementRepository> entitlementRepositoryProvider =
+    Provider<EntitlementRepository>(
+      (ref) => EntitlementRepository(ref.watch(apiClientProvider)),
+    );
+
+/// 数据看板仓库（埋点上报）。
+final Provider<AnalyticsRepository> analyticsRepositoryProvider =
+    Provider<AnalyticsRepository>(
+      (ref) => AnalyticsRepository(ref.watch(apiClientProvider)),
+    );
+
+/// 权益页状态机（单一实例）。
+final StateNotifierProvider<EntitlementController, EntitlementState>
+entitlementControllerProvider =
+    StateNotifierProvider<EntitlementController, EntitlementState>((ref) {
+      return EntitlementController(
+        ref.watch(entitlementRepositoryProvider),
+        ref.watch(analyticsRepositoryProvider),
+      );
     });

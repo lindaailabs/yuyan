@@ -25,3 +25,6 @@ apps/app/build/
 .env
 .env.*
 *.local
+
+# 本地后端环境配置（含密钥，用 config.test.yaml.example 作模板）
+/apps/server/config.test.yaml

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
+
+import 'connection/connection.dart';
 
 part 'app_database.g.dart';
 
@@ -98,7 +99,7 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    // 数据库文件路径：接入 path_provider 后改为应用文档目录（见类注释）。
-    return NativeDatabase.memory();
+    // 按平台选择实现（原生 dart:ffi / web WASM），见 connection/。
+    return createConnection();
   });
 }

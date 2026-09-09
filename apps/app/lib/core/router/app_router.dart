@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../auth/auth_state.dart';
 import '../../features/auth/login_page.dart';
+import '../../features/auth/register_page.dart';
 import '../../features/auth/onboarding_page.dart';
 import '../../features/chat/chat_page.dart';
 import '../../features/contacts/contacts_page.dart';
@@ -13,6 +14,7 @@ import '../../features/home/home_page.dart';
 import '../../features/memory/memory_page.dart';
 import '../../features/pet/create_pet_page.dart';
 import '../../features/profile/profile_page.dart';
+import '../../features/subscription/subscription_page.dart';
 
 /// 应用路由（go_router）：三态守卫 redirect。
 GoRouter buildRouter(ValueListenable<AuthState> authState) {
@@ -23,6 +25,10 @@ GoRouter buildRouter(ValueListenable<AuthState> authState) {
         redirectOf(authState.value, state.matchedLocation),
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterPage(),
+      ),
       GoRoute(
         path: '/onboarding',
         builder: (context, state) => const OnboardingPage(),
@@ -66,6 +72,10 @@ GoRouter buildRouter(ValueListenable<AuthState> authState) {
         path: '/profile',
         builder: (context, state) => const ProfilePage(),
       ),
+      GoRoute(
+        path: '/subscription',
+        builder: (context, state) => const SubscriptionPage(),
+      ),
       GoRoute(path: '/search', builder: (context, state) => const SearchPage()),
       GoRoute(
         path: '/contacts',
@@ -89,7 +99,8 @@ String? redirectOf(AuthState auth, String location) {
   final inOnboarding = location == '/onboarding';
 
   if (auth is AuthLoggedOut) {
-    return inLogin ? null : '/login';
+    // 未登录允许访问登录页与注册页，其余一律回登录页。
+    return (inLogin || location == '/register') ? null : '/login';
   }
   if (auth is AuthOnboarding) {
     return inOnboarding ? null : '/onboarding';

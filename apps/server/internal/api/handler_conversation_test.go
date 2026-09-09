@@ -13,8 +13,8 @@ import (
 func newPetChatEnv(t *testing.T) (e *handlerEnv, aToken, bToken string, aPetID int64) {
 	t.Helper()
 	e = newHandlerEnv(t)
-	aToken, _ = loginByPhone(t, e, "13803000001")
-	bToken, _ = loginByPhone(t, e, "13803000002")
+	aToken, _ = loginByPhone(t, e, "13803000001", "secret123")
+	bToken, _ = loginByPhone(t, e, "13803000002", "secret123")
 
 	_, resp := doJSON(t, e.r, http.MethodPost, "/api/v1/pets", aToken, map[string]any{"name": "小燕"})
 	if resp.Code != 0 {

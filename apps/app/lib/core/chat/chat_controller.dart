@@ -17,6 +17,7 @@ class ChatState {
     this.syncing = false,
     this.hasMore = false,
     this.error,
+    this.quotaExhausted = false,
   });
 
   final List<PetMessage> messages;
@@ -38,6 +39,9 @@ class ChatState {
 
   final String? error;
 
+  /// 当日 AI 额度耗尽（服务端 2501）。聊天页据此给出订阅引导。
+  final bool quotaExhausted;
+
   ChatState copyWith({
     List<PetMessage>? messages,
     List<PetMemory>? newMemories,
@@ -46,7 +50,9 @@ class ChatState {
     bool? syncing,
     bool? hasMore,
     String? error,
+    bool? quotaExhausted,
     bool clearError = false,
+    bool clearQuota = false,
   }) =>
       ChatState(
         messages: messages ?? this.messages,
@@ -56,6 +62,7 @@ class ChatState {
         syncing: syncing ?? this.syncing,
         hasMore: hasMore ?? this.hasMore,
         error: clearError ? null : error ?? this.error,
+        quotaExhausted: quotaExhausted ?? (clearQuota ? false : this.quotaExhausted),
       );
 }
 
@@ -161,6 +168,7 @@ class ChatController extends StateNotifier<ChatState> {
       messages: _upsert(optimistic),
       sending: true,
       clearError: true,
+      clearQuota: true,
     );
 
     try {
@@ -186,6 +194,7 @@ class ChatController extends StateNotifier<ChatState> {
         messages: await _repo.localMessages(convId),
         sending: false,
         error: e.msg,
+        quotaExhausted: e.code == 2501,
       );
       return false;
     } catch (_) {

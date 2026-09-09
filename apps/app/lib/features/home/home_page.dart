@@ -22,7 +22,7 @@ class HomePage extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.person),
             tooltip: Zh.homeProfile,
-            onPressed: () => context.go('/profile'),
+            onPressed: () => context.push('/profile'),
           ),
         ],
       ),
@@ -39,17 +39,18 @@ class HomePage extends ConsumerWidget {
             else if (state.current == null)
               _EmptyPetView(
                 error: state.error,
-                onCreate: () => context.go('/pet/create'),
+                onCreate: () => context.push('/pet/create'),
                 onRetry: () => ref.read(petControllerProvider.notifier).load(),
               )
             else
               _PetHomeView(
                 pet: state.current!,
                 error: state.error,
-                onCreate: () => context.go('/pet/create'),
-                onChat: () => context.go('/chat/${state.current!.id}'),
-                onMemory: () => context.go('/memories/${state.current!.id}'),
-                onGrowth: () => context.go('/growth/${state.current!.id}'),
+                onCreate: () => context.push('/pet/create'),
+                onChat: () => context.push('/chat/${state.current!.id}'),
+                onMemory: () => context.push('/memories/${state.current!.id}'),
+                onGrowth: () => context.push('/growth/${state.current!.id}'),
+                onSubscription: () => context.push('/subscription'),
               ),
           ],
         ),
@@ -115,6 +116,7 @@ class _PetHomeView extends StatelessWidget {
     required this.onChat,
     required this.onMemory,
     required this.onGrowth,
+    required this.onSubscription,
     this.error,
   });
 
@@ -123,6 +125,7 @@ class _PetHomeView extends StatelessWidget {
   final VoidCallback onChat;
   final VoidCallback onMemory;
   final VoidCallback onGrowth;
+  final VoidCallback onSubscription;
   final String? error;
 
   @override
@@ -183,6 +186,12 @@ class _PetHomeView extends StatelessWidget {
           icon: Icons.trending_up,
           label: Zh.homePetGrowth,
           onTap: onGrowth,
+        ),
+        const SizedBox(height: 12),
+        _ActionButton(
+          icon: Icons.workspace_premium_outlined,
+          label: Zh.subscription,
+          onTap: onSubscription,
         ),
       ],
     );

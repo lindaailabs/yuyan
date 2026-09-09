@@ -48,12 +48,13 @@ var extractionRules = []extractionRule{
 
 // MemoryService 长期记忆：规则抽取、相关度召回、用户查看与软删除。
 type MemoryService struct {
-	mem  *repo.MemoryRepo
-	pets *repo.PetRepo
+	mem      *repo.MemoryRepo
+	pets     *repo.PetRepo
+	analytics *AnalyticsService
 }
 
-func NewMemoryService(mem *repo.MemoryRepo, pets *repo.PetRepo) *MemoryService {
-	return &MemoryService{mem: mem, pets: pets}
+func NewMemoryService(mem *repo.MemoryRepo, pets *repo.PetRepo, analytics *AnalyticsService) *MemoryService {
+	return &MemoryService{mem: mem, pets: pets, analytics: analytics}
 }
 
 // Extract 从一条用户消息中抽取并持久化长期事实，返回本次新增的记忆。
@@ -174,6 +175,9 @@ func (s *MemoryService) Delete(ctx context.Context, userID, memoryID int64) erro
 		return ErrMemoryNotFound
 	}
 	slog.Info("memory deleted", "user_id", userID, "memory_id", memoryID)
+	if s.analytics != nil {
+		s.analytics.Track(ctx, userID, "memory_deleted", map[string]any{"memory_id": memoryID})
+	}
 	return nil
 }
 

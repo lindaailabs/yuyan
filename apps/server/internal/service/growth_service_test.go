@@ -43,7 +43,7 @@ func newGrowthEnv(t *testing.T, clock func() time.Time) *growthEnv {
 	petRepo := repo.NewPetRepo(gdb)
 	return &growthEnv{
 		svc:  NewGrowthService(repo.NewGrowthRepo(gdb), petRepo, clock),
-		pets: NewPetService(petRepo),
+		pets: NewPetService(petRepo, nil),
 		ur:   repo.NewUserRepo(gdb),
 		evts: repo.NewGrowthRepo(gdb),
 		loc:  loc,

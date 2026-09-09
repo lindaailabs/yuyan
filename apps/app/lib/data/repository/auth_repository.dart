@@ -7,15 +7,21 @@ class AuthRepository {
 
   final ApiClient _api;
 
-  /// 下发验证码：一期返回图形验证码 base64；生产短信模式 captchaImage 为 null。
-  Future<SmsCodeResponse> sendSmsCode(String phone) async {
-    final data = await _api.post('/auth/sms-code', body: {'phone': phone});
-    return SmsCodeResponse.fromJson(data);
+  /// 手机号+密码注册（不存在才可注册），返回双 token。
+  Future<TokenPair> register(String phone, String password) async {
+    final data = await _api.post(
+      '/auth/register',
+      body: {'phone': phone, 'password': password},
+    );
+    return TokenPair.fromJson(data);
   }
 
-  /// 验证码登录（不存在则自动注册），返回双 token。
-  Future<TokenPair> login(String phone, String code) async {
-    final data = await _api.post('/auth/login', body: {'phone': phone, 'code': code});
+  /// 手机号+密码登录，返回双 token。
+  Future<TokenPair> login(String phone, String password) async {
+    final data = await _api.post(
+      '/auth/login',
+      body: {'phone': phone, 'password': password},
+    );
     return TokenPair.fromJson(data);
   }
 

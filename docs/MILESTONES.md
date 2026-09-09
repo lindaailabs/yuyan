@@ -145,21 +145,27 @@ App：
 
 目标：产品具备商业化和运营观测的最小地基。
 
+状态（W5 已交付，见 `openspec/changes/add-entitlement-analytics`）：
+
+- migration：`entitlements`、`usage_counters`、`event_logs`、`payment_orders`（均含 up/down）。
+- 权益：服务端为唯一事实源；免费 50 条/天、Pro 500 条/天、记忆容量 200/1000、高级模型开关；对话链路在 Gateway 前校验额度（超额 2501 不写消息、不调用 AI）。
+- 支付：订单号幂等回调入口 `POST /entitlements/payments/callback`（成功发放、失败不发放、重复幂等）；沙盒开通 `POST /entitlements/sandbox-purchase` 仅非生产环境可用（生产返回 2504）。
+- 埋点：建宠、首轮对话、记忆生成/删除、升级、额度拒绝、订阅页曝光；`POST /events` 批量上报（限条数/长度/脱敏），内部出口 `GET /admin/events` 仅非生产。
+- 错误码：1001 参数错误、1002 未认证、2501 额度耗尽、2504 沙盒禁用；领域事件名白名单。
+
 服务端：
 
-- migration：`entitlements`、`usage_counters`、`event_logs`。
-- 权益：免费额度、订阅额度、记忆容量、语音/高级模型开关预留。
-- 支付：预留 Apple IAP / Google Play Billing / 微信 / 支付宝收据或回调接口，不在一期硬接生产支付也要保证模型正确。
-- 埋点：激活、注册、创建宠物、首轮对话、记忆生成、次日回访、订阅页曝光。
-- 看板出口：基础 SQL 或 REST 管理接口，先满足内部观察。
+- `internal/service/entitlement_service`、`analytics_service` + repo/单测；对话链路接入 `ConversationService`（额度校验 + 关键路径埋点）。
+- `internal/api`：GET /entitlements/me、POST /entitlements/sandbox-purchase、POST /entitlements/payments/callback、POST /events、GET /admin/events（非生产）+ 路由与装配。
 
 App：
 
-- 权益状态展示。
-- 订阅页壳和额度耗尽提示。
-- 埋点上报客户端事件。
+- 权益模型/仓库/控制器、订阅页（权益与剩余额度、沙盒开通、耗尽引导、空/错/加载态）、聊天页额度耗尽 2501 引导、主页权益入口、订阅页曝光埋点。
+- 全栈冒烟 `scripts/smoke-entitlement.ps1`：默认免费 → 沙盒 Pro → 对话消耗 → 埋点可查 → 回调幂等 → 1001/1002。
 
-验收：服务端能按用户返回权益和剩余额度；AI 对话能记录和检查额度；关键事件可查询。
+验收：服务端能按用户返回权益和剩余额度；AI 对话能记录和检查额度；关键事件可查询。`go test` 与 `flutter test` 全绿。
+
+TEST-GAP：真机/模拟器 UI 走查未执行（本机无 Android SDK）；生产支付（IAP/微信/支付宝）仅预留回调模型，未接真实凭证校验；跨天额度重置由注入时钟的服务端单测覆盖，未做真实跨天验证。
 
 ## W6 联调、体验打磨与语音 POC
 

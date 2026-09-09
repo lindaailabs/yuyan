@@ -32,9 +32,19 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
-  /// 验证码登录（自动注册）：成功后按 nickname 分流 Onboarding/Ready。
-  Future<void> login(String phone, String code) async {
-    final pair = await _repo.login(phone, code);
+  /// 手机号+密码登录：成功后按 nickname 分流 Onboarding/Ready。
+  Future<void> login(String phone, String password) async {
+    final pair = await _repo.login(phone, password);
+    await _storage.write(access: pair.accessToken, refresh: pair.refreshToken);
+    final profile = await _repo.getMe();
+    state = profile.nickname == null
+        ? const AuthOnboarding()
+        : AuthReady(profile: profile);
+  }
+
+  /// 手机号+密码注册（自动登录）：成功后按 nickname 分流 Onboarding/Ready。
+  Future<void> register(String phone, String password) async {
+    final pair = await _repo.register(phone, password);
     await _storage.write(access: pair.accessToken, refresh: pair.refreshToken);
     final profile = await _repo.getMe();
     state = profile.nickname == null

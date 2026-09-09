@@ -35,7 +35,7 @@ func newPetEnv(t *testing.T) *petEnv {
 	if err != nil {
 		t.Fatalf("gorm open: %v", err)
 	}
-	return &petEnv{svc: NewPetService(repo.NewPetRepo(gdb)), ur: repo.NewUserRepo(gdb)}
+	return &petEnv{svc: NewPetService(repo.NewPetRepo(gdb), nil), ur: repo.NewUserRepo(gdb)}
 }
 
 func (e *petEnv) user(t *testing.T, phone string) int64 {

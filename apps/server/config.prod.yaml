@@ -1,0 +1,14 @@
+# 生产环境配置（APP_ENV=prod 时加载，或 CONFIG_FILE 指向本文件）。
+# 密钥全部用 ${ENV_VAR} 引用运行时环境变量，本文件不落明文。
+# 线上打包部署在打包/启动命令指定 prod 即可（APP_ENV=prod 或 CONFIG_FILE=config.prod.yaml）。
+app_env: "prod"
+http_port: "8080"
+log_level: "warn"
+mysql_dsn: "${MYSQL_DSN}"
+redis_addr: "${REDIS_ADDR}"
+jwt_secret: "${JWT_SECRET}"
+ai_provider: "openai"
+ai_base_url: "${AI_BASE_URL}"
+ai_api_key: "${AI_API_KEY}"
+ai_model: "${AI_MODEL}"
+ai_timeout_ms: 8000

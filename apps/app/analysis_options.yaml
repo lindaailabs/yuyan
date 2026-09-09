@@ -16,6 +16,10 @@ analyzer:
     - ios/**
     # 代码生成产物
     - '**/*.g.dart'
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
 
 linter:
   # The lint rules applied to this project can be customized in the

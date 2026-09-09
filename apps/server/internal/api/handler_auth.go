@@ -20,16 +20,17 @@ func NewAuthHandler(auth *service.AuthService) *AuthHandler {
 // errInvalidParam 参数 binding 失败的统一 1001。
 var errInvalidParam = errcode.New(errcode.ErrInvalidParam, "参数错误")
 
-// SendSmsCode POST /auth/sms-code：下发图形验证码。
-func (h *AuthHandler) SendSmsCode(c *gin.Context) {
+// Register POST /auth/register：手机号+密码注册（不存在才可注册），返回双 token。
+func (h *AuthHandler) Register(c *gin.Context) {
 	var req struct {
-		Phone string `json:"phone" binding:"required"`
+		Phone    string `json:"phone" binding:"required"`
+		Password string `json:"password" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		FailErr(c, errInvalidParam)
 		return
 	}
-	resp, err := h.auth.SendSmsCode(c.Request.Context(), req.Phone)
+	resp, err := h.auth.Register(c.Request.Context(), req.Phone, req.Password)
 	if err != nil {
 		FailErr(c, err)
 		return
@@ -37,17 +38,17 @@ func (h *AuthHandler) SendSmsCode(c *gin.Context) {
 	OK(c, resp)
 }
 
-// Login POST /auth/login：验证码登录（不存在则自动注册），签发双 token。
+// Login POST /auth/login：手机号+密码登录，返回双 token。
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req struct {
-		Phone string `json:"phone" binding:"required"`
-		Code  string `json:"code" binding:"required"`
+		Phone    string `json:"phone" binding:"required"`
+		Password string `json:"password" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		FailErr(c, errInvalidParam)
 		return
 	}
-	resp, err := h.auth.Login(c.Request.Context(), req.Phone, req.Code)
+	resp, err := h.auth.Login(c.Request.Context(), req.Phone, req.Password)
 	if err != nil {
 		FailErr(c, err)
 		return

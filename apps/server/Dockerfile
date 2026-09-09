@@ -20,7 +20,11 @@ RUN cd apps/server && CGO_ENABLED=0 GOOS=linux go build -o /out/server ./cmd/ser
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata
 COPY --from=builder /out/server /usr/local/bin/server
+# 生产配置：密钥经 ${ENV_VAR} 引用环境变量，不落明文；线上启动指定 prod 加载本文件。
+COPY --from=builder /src/apps/server/config.prod.yaml /config.prod.yaml
 
 ENV GIN_MODE=release
+ENV APP_ENV=prod
+ENV CONFIG_FILE=/config.prod.yaml
 EXPOSE 8080
 ENTRYPOINT ["server"]

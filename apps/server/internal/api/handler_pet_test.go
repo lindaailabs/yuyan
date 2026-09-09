@@ -8,8 +8,8 @@ import (
 
 func TestPetEndpoints(t *testing.T) {
 	env := newHandlerEnv(t)
-	access, _ := loginByPhone(t, env, "13700000101")
-	otherAccess, _ := loginByPhone(t, env, "13700000102")
+	access, _ := loginByPhone(t, env, "13700000101", "secret123")
+	otherAccess, _ := loginByPhone(t, env, "13700000102", "secret123")
 
 	t.Run("create/list/detail/state 正常", func(t *testing.T) {
 		w, resp := doJSON(t, env.r, http.MethodPost, "/api/v1/pets", access, map[string]any{"name": "小燕", "avatar_id": 2})

@@ -6,44 +6,45 @@ import (
 	"testing"
 )
 
-// TestAuthEndpoints 认证三端点：sms-code / login / refresh（每端点 happy + error）。
+// TestAuthEndpoints 认证三端点：register / login / refresh（每端点 happy + error）。
 func TestAuthEndpoints(t *testing.T) {
 	env := newHandlerEnv(t)
 
-	t.Run("sms-code 正常下发", func(t *testing.T) {
-		w, resp := doJSON(t, env.r, http.MethodPost, "/api/v1/auth/sms-code", "", map[string]string{"phone": "13700000001"})
+	t.Run("register 正常注册", func(t *testing.T) {
+		w, resp := doJSON(t, env.r, http.MethodPost, "/api/v1/auth/register", "", map[string]string{"phone": "13700000001", "password": "secret123"})
 		if w.Code != http.StatusOK || resp.Code != 0 {
 			t.Fatalf("status=%d code=%d msg=%s", w.Code, resp.Code, resp.Msg)
 		}
 		var data struct {
-			CaptchaImage string `json:"captcha_image"`
+			AccessToken  string `json:"access_token"`
+			RefreshToken string `json:"refresh_token"`
 		}
 		if err := json.Unmarshal(resp.Data, &data); err != nil {
 			t.Fatalf("unmarshal: %v", err)
 		}
-		if len(data.CaptchaImage) < 100 {
-			t.Errorf("captcha_image 应为有效 base64 图片, got %d 字节", len(data.CaptchaImage))
+		if data.AccessToken == "" || data.RefreshToken == "" {
+			t.Errorf("注册应返回双 token, got %+v", data)
 		}
 	})
 
-	t.Run("sms-code 限频 2001", func(t *testing.T) {
-		doJSON(t, env.r, http.MethodPost, "/api/v1/auth/sms-code", "", map[string]string{"phone": "13700000002"})
-		w, resp := doJSON(t, env.r, http.MethodPost, "/api/v1/auth/sms-code", "", map[string]string{"phone": "13700000002"})
-		if w.Code != http.StatusOK || resp.Code != 2001 {
-			t.Errorf("status=%d code=%d, want 200/2001", w.Code, resp.Code)
+	t.Run("register 重复注册 2004", func(t *testing.T) {
+		doJSON(t, env.r, http.MethodPost, "/api/v1/auth/register", "", map[string]string{"phone": "13700000002", "password": "secret123"})
+		w, resp := doJSON(t, env.r, http.MethodPost, "/api/v1/auth/register", "", map[string]string{"phone": "13700000002", "password": "secret123"})
+		if w.Code != http.StatusOK || resp.Code != 2004 {
+			t.Errorf("status=%d code=%d, want 200/2004", w.Code, resp.Code)
 		}
 	})
 
-	t.Run("sms-code 参数错误 1001", func(t *testing.T) {
-		for _, body := range []map[string]string{{}, {"phone": "12345"}} {
-			w, resp := doJSON(t, env.r, http.MethodPost, "/api/v1/auth/sms-code", "", body)
+	t.Run("register 参数错误 1001", func(t *testing.T) {
+		for _, body := range []map[string]string{{}, {"phone": "12345"}, {"password": "secret123"}} {
+			w, resp := doJSON(t, env.r, http.MethodPost, "/api/v1/auth/register", "", body)
 			if w.Code != http.StatusBadRequest || resp.Code != 1001 {
 				t.Errorf("body=%v: status=%d code=%d, want 400/1001", body, w.Code, resp.Code)
 			}
 		}
 	})
 
-	access, refresh := loginByPhone(t, env, "13700000003")
+	access, refresh := loginByPhone(t, env, "13700000003", "secret123")
 
 	t.Run("login 正常（自动注册+双 token）", func(t *testing.T) {
 		if access == "" || refresh == "" {
@@ -51,11 +52,11 @@ func TestAuthEndpoints(t *testing.T) {
 		}
 	})
 
-	t.Run("login 验证码错误 2002", func(t *testing.T) {
-		doJSON(t, env.r, http.MethodPost, "/api/v1/auth/sms-code", "", map[string]string{"phone": "13700000004"})
-		w, resp := doJSON(t, env.r, http.MethodPost, "/api/v1/auth/login", "", map[string]string{"phone": "13700000004", "code": "000000"})
-		if w.Code != http.StatusOK || resp.Code != 2002 {
-			t.Errorf("status=%d code=%d, want 200/2002", w.Code, resp.Code)
+	t.Run("login 密码错误 2005", func(t *testing.T) {
+		doJSON(t, env.r, http.MethodPost, "/api/v1/auth/register", "", map[string]string{"phone": "13700000004", "password": "secret123"})
+		w, resp := doJSON(t, env.r, http.MethodPost, "/api/v1/auth/login", "", map[string]string{"phone": "13700000004", "password": "wrong"})
+		if w.Code != http.StatusOK || resp.Code != 2005 {
+			t.Errorf("status=%d code=%d, want 200/2005", w.Code, resp.Code)
 		}
 	})
 
@@ -103,7 +104,7 @@ func TestAuthEndpoints(t *testing.T) {
 func TestUserEndpoints(t *testing.T) {
 	env := newHandlerEnv(t)
 
-	access, refresh := loginByPhone(t, env, "13700000011")
+	access, refresh := loginByPhone(t, env, "13700000011", "secret123")
 
 	t.Run("me 正常（首登形态 nickname=null）", func(t *testing.T) {
 		w, resp := doJSON(t, env.r, http.MethodGet, "/api/v1/users/me", access, nil)

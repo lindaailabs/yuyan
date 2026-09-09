@@ -8,7 +8,8 @@ type User struct {
 	ID        int64     `gorm:"column:id;primaryKey;autoIncrement"`
 	Phone     string    `gorm:"column:phone;uniqueIndex;size:20;not null"`
 	Nickname  *string   `gorm:"column:nickname;size:20"` // 指针表达 NULL
-	AvatarID  int16     `gorm:"column:avatar_id;not null;default:1"`
+	AvatarID    int16     `gorm:"column:avatar_id;not null;default:1"`
+	PasswordHash string    `gorm:"column:password_hash;size:255"` // 可空：旧验证码注册用户无密码
 	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime"`
 	UpdatedAt time.Time `gorm:"column:updated_at;autoUpdateTime"`
 }

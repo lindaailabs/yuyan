@@ -15,7 +15,7 @@ type friendRequestPayload struct {
 // loginAs 便捷封装：登录并完成首登引导（nickname 非空），返回 token 与 uid。
 func loginAs(t *testing.T, e *handlerEnv, phone, nickname string) string {
 	t.Helper()
-	access, _ := loginByPhone(t, e, phone)
+	access, _ := loginByPhone(t, e, phone, "secret123")
 	if nickname != "" {
 		_, resp := doJSON(t, e.r, http.MethodPut, "/api/v1/users/me", access, map[string]any{"nickname": nickname})
 		if resp.Code != 0 {

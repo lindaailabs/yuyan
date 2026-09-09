@@ -63,17 +63,19 @@ func newHandlerEnv(t *testing.T) *handlerEnv {
 	}
 
 	jwtMgr := jwt.NewManager("handler-test-secret")
-	authSvc := service.NewAuthService(repo.NewCaptchaRepo(rdb), repo.NewUserRepo(gdb), jwtMgr)
+	authSvc := service.NewAuthService(repo.NewUserRepo(gdb), jwtMgr)
 	userSvc := service.NewUserService(repo.NewUserRepo(gdb))
 	contactsSvc := service.NewContactsService(repo.NewFriendshipRepo(gdb), repo.NewUserRepo(gdb))
-	petSvc := service.NewPetService(repo.NewPetRepo(gdb))
+	analyticsSvc := service.NewAnalyticsService(repo.NewEventRepo(gdb), nil)
+	entSvc := service.NewEntitlementService(repo.NewEntitlementRepo(gdb), repo.NewUsageRepo(gdb), repo.NewPaymentOrderRepo(gdb), nil, true)
+	petSvc := service.NewPetService(repo.NewPetRepo(gdb), analyticsSvc)
 
 	// AI Gateway 用 mock provider：API 测试同样不依赖真实模型（guide §10）。
 	gateway, err := ai.New(ai.Config{Provider: ai.ProviderMock, TimeoutMS: 2000})
 	if err != nil {
 		t.Fatalf("ai gateway: %v", err)
 	}
-	memSvc := service.NewMemoryService(repo.NewMemoryRepo(gdb), repo.NewPetRepo(gdb))
+	memSvc := service.NewMemoryService(repo.NewMemoryRepo(gdb), repo.NewPetRepo(gdb), analyticsSvc)
 	growthSvc := service.NewGrowthService(repo.NewGrowthRepo(gdb), repo.NewPetRepo(gdb), nil)
 	convSvc := service.NewConversationService(
 		repo.NewConversationRepo(gdb),
@@ -83,6 +85,8 @@ func newHandlerEnv(t *testing.T) *handlerEnv {
 		memSvc,
 		growthSvc,
 		gateway,
+		entSvc,
+		analyticsSvc,
 	)
 
 	return &handlerEnv{
@@ -94,6 +98,9 @@ func newHandlerEnv(t *testing.T) *handlerEnv {
 			Conversation: convSvc,
 			Memory:       memSvc,
 			Growth:       growthSvc,
+			Entitlement:  entSvc,
+			Analytics:    analyticsSvc,
+			AppEnv:       "dev",
 			JWT:          jwtMgr,
 		}),
 		mr:  mr,
@@ -137,20 +144,16 @@ func doJSON(t *testing.T, r *gin.Engine, method, path, token string, body any) (
 	return w, e
 }
 
-// loginByPhone 走完整 HTTP 流程：下发验证码 → 从 Redis 取码 → 登录，返回双 token。
-func loginByPhone(t *testing.T, e *handlerEnv, phone string) (access, refresh string) {
+// loginByPhone 走完整 HTTP 流程：注册（手机号+密码）→ 登录，返回双 token。
+func loginByPhone(t *testing.T, e *handlerEnv, phone, password string) (access, refresh string) {
 	t.Helper()
 
-	_, resp := doJSON(t, e.r, http.MethodPost, "/api/v1/auth/sms-code", "", map[string]string{"phone": phone})
+	_, resp := doJSON(t, e.r, http.MethodPost, "/api/v1/auth/register", "", map[string]string{"phone": phone, "password": password})
 	if resp.Code != 0 {
-		t.Fatalf("sms-code: code=%d msg=%s", resp.Code, resp.Msg)
-	}
-	code, err := e.rdb.Get(context.Background(), "sms:code:"+phone).Result()
-	if err != nil {
-		t.Fatalf("read stored code: %v", err)
+		t.Fatalf("register: code=%d msg=%s", resp.Code, resp.Msg)
 	}
 
-	_, lresp := doJSON(t, e.r, http.MethodPost, "/api/v1/auth/login", "", map[string]string{"phone": phone, "code": code})
+	_, lresp := doJSON(t, e.r, http.MethodPost, "/api/v1/auth/login", "", map[string]string{"phone": phone, "password": password})
 	if lresp.Code != 0 {
 		t.Fatalf("login: code=%d msg=%s", lresp.Code, lresp.Msg)
 	}

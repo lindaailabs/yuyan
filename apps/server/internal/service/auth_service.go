@@ -3,101 +3,100 @@ package service
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"regexp"
-	"strconv"
 
-	"github.com/mojocn/base64Captcha"
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/lindaailabs/yuyan/server/internal/pkg/errcode"
 	"github.com/lindaailabs/yuyan/server/internal/pkg/jwt"
 	"github.com/lindaailabs/yuyan/server/internal/repo"
 )
 
-// randomCode 生成 6 位数字验证码（图形验证码明文）。
-func randomCode() string {
-	return strconv.Itoa(100000 + rand.Intn(900000)) //nolint:gosec // 非安全用途（图形验证码）
-}
-
 // phoneRe 中国大陆手机号：11 位、1 开头、第二位 3-9。
 var phoneRe = regexp.MustCompile(`^1[3-9]\d{9}$`)
 
-// ErrInvalidPhone 手机号格式错误。
-var ErrInvalidPhone = errcode.New(1001, "手机号格式不正确")
+const (
+	minPasswordLen = 6
+	maxPasswordLen = 64
+)
 
 // Auth 业务错误码（2xxx 段）。
 var (
-	ErrCodeInvalid  = errcode.New(2003, "验证码错误或已过期")
-	ErrTokenInvalid = errcode.New(1002, "登录状态无效，请重新登录")
+	ErrInvalidPhone    = errcode.New(1001, "手机号格式不正确")
+	ErrInvalidPassword = errcode.New(1001, "密码需为 6~64 位字符")
+	ErrPhoneRegistered = errcode.New(2004, "该手机号已注册，请直接登录")
+	ErrCredential      = errcode.New(2005, "手机号或密码错误")
+	ErrTokenInvalid    = errcode.New(1002, "登录状态无效，请重新登录")
 )
 
 // AuthService 账号/认证业务逻辑（api → service → repo 分层，事务仅发生在本层）。
 type AuthService struct {
-	captcha *repo.CaptchaRepo
-	users   *repo.UserRepo
-	jwt     *jwt.Manager
-	// 验证码图片驱动（依赖注入便于测试替换）。
-	captchaDriver base64Captcha.Driver
+	users *repo.UserRepo
+	jwt   *jwt.Manager
 }
 
 // NewAuthService 构造。
-func NewAuthService(captcha *repo.CaptchaRepo, users *repo.UserRepo, jwtMgr *jwt.Manager) *AuthService {
-	// 6 位数字图形验证码；宽 120 高 40，干扰适中（一期不对接短信时的登录凭证）。
-	driver := base64Captcha.NewDriverDigit(40, 120, 6, 0.7, 20)
-	return &AuthService{captcha: captcha, users: users, jwt: jwtMgr, captchaDriver: driver}
+func NewAuthService(users *repo.UserRepo, jwtMgr *jwt.Manager) *AuthService {
+	return &AuthService{users: users, jwt: jwtMgr}
 }
 
-// SendSmsCodeResponse 下发验证码响应：一期携带图形验证码（base64 PNG）。
-// 生产接入短信后 captcha_image 缺省（客户端两态兼容，见 MILESTONES W2）。
-type SendSmsCodeResponse struct {
-	CaptchaImage string `json:"captcha_image,omitempty"`
-}
-
-// SendSmsCode 生成 6 位数字验证码：存 Redis（5min TTL、限频 1/min）并渲染为图形验证码。
-func (s *AuthService) SendSmsCode(ctx context.Context, phone string) (*SendSmsCodeResponse, error) {
-	if !phoneRe.MatchString(phone) {
-		return nil, ErrInvalidPhone
-	}
-
-	code := randomCode()
-
-	if err := s.captcha.SetCode(ctx, phone, code); err != nil {
-		return nil, err // 限频错误（2001）或 Redis 故障，直接上抛
-	}
-
-	// 将明文验证码渲染为图形验证码（base64 PNG）。
-	item, err := s.captchaDriver.DrawCaptcha(code)
-	if err != nil {
-		return nil, fmt.Errorf("draw captcha: %w", err)
-	}
-	return &SendSmsCodeResponse{CaptchaImage: item.EncodeB64string()}, nil
-}
-
-// LoginResponse 登录/刷新响应。
+// LoginResponse 注册/登录/刷新响应（同一结构）。
 type LoginResponse struct {
 	jwt.TokenPair
 }
 
-// Login 验证码登录：校验（一次性）→ 不存在则自动注册 → 签发双 token。
-func (s *AuthService) Login(ctx context.Context, phone, code string) (*LoginResponse, error) {
+// Register 手机号+密码注册（不存在才可注册），成功后直接签发双 token。
+func (s *AuthService) Register(ctx context.Context, phone, password string) (*LoginResponse, error) {
 	if !phoneRe.MatchString(phone) {
 		return nil, ErrInvalidPhone
 	}
-	if code == "" {
-		return nil, errcode.New(errcode.ErrInvalidParam, "验证码不能为空")
+	if l := len(password); l < minPasswordLen || l > maxPasswordLen {
+		return nil, ErrInvalidPassword
+	}
+	// 已注册：引导走登录，避免重复创建。
+	if _, err := s.users.FindByPhone(ctx, phone); err == nil {
+		return nil, ErrPhoneRegistered
+	} else if !repo.IsNotFound(err) {
+		return nil, fmt.Errorf("register find user: %w", err)
 	}
 
-	if err := s.captcha.VerifyCode(ctx, phone, code); err != nil {
-		return nil, err
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("hash password: %w", err)
+	}
+	u, err := s.users.CreateUserWithPassword(ctx, phone, string(hash))
+	if err != nil {
+		return nil, fmt.Errorf("create user: %w", err)
+	}
+	pair, err := s.jwt.Issue(u.ID)
+	if err != nil {
+		return nil, fmt.Errorf("issue token: %w", err)
+	}
+	return &LoginResponse{TokenPair: pair}, nil
+}
+
+// Login 手机号+密码登录：校验密码哈希 → 签发双 token。
+func (s *AuthService) Login(ctx context.Context, phone, password string) (*LoginResponse, error) {
+	if !phoneRe.MatchString(phone) {
+		return nil, ErrInvalidPhone
+	}
+	if password == "" {
+		return nil, errcode.New(errcode.ErrInvalidParam, "密码不能为空")
 	}
 
-	// 自动注册：不存在则建（先查后插；唯一索引兜底竞态）。
 	u, err := s.users.FindByPhone(ctx, phone)
 	if repo.IsNotFound(err) {
-		u, err = s.users.CreateUser(ctx, phone)
+		return nil, ErrCredential
 	}
 	if err != nil {
-		return nil, fmt.Errorf("login find/create user: %w", err)
+		return nil, fmt.Errorf("login find user: %w", err)
+	}
+	// 旧验证码注册用户无密码哈希：统一返回凭证错误（一期数据，生产可走重置流程）。
+	if u.PasswordHash == "" {
+		return nil, ErrCredential
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)); err != nil {
+		return nil, ErrCredential
 	}
 
 	pair, err := s.jwt.Issue(u.ID)

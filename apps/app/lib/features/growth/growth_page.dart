@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/zh.dart';
 import '../../core/providers.dart';
@@ -41,7 +42,15 @@ class _GrowthPageState extends ConsumerState<GrowthPage> {
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => Navigator.of(context).maybePop(),
+          onPressed: () {
+            // 主页钻取进入时（push）直接 pop 回主页；
+            // 若从 URL 直接打开（无历史栈）则回主页兜底。
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            } else {
+              context.go('/home');
+            }
+          },
         ),
         title: const Text(
           Zh.growthTitle,

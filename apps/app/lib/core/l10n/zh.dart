@@ -11,13 +11,22 @@ class Zh {
   // 登录
   static const String loginTitle = '登录';
   static const String loginPhoneHint = '手机号';
-  static const String loginCodeHint = '验证码';
-  static const String loginGetCode = '获取验证码';
-  static const String loginSubmit = '登录 / 注册';
-  static const String loginSmsSent = '验证码已发送，请查收短信';
-  static const String loginCaptchaRefresh = '点击图片刷新验证码';
+  static const String loginPasswordHint = '密码';
+  static const String loginSubmit = '登录';
   static const String loginBadPhone = '请输入正确的 11 位手机号';
-  static const String loginEmptyCode = '请输入验证码';
+  static const String loginEmptyPassword = '请输入密码';
+  static const String loginToRegister = '没有账号？去注册';
+
+  // 注册
+  static const String registerTitle = '注册';
+  static const String registerPhoneHint = '手机号';
+  static const String registerPasswordHint = '密码（6~64 位）';
+  static const String registerConfirmHint = '确认密码';
+  static const String registerSubmit = '注册并登录';
+  static const String registerToLogin = '已有账号？去登录';
+  static const String registerPasswordMismatch = '两次输入的密码不一致';
+  static const String registerBadPhone = '请输入正确的 11 位手机号';
+  static const String registerBadPassword = '密码需为 6~64 位字符';
 
   // 首登引导
   static const String onboardingTitle = '完善资料';
@@ -112,6 +121,26 @@ class Zh {
   static const String growthTypeLevelUp = '升级啦';
   static const String growthTypeMood = '心情变化';
   static const String growthTypeStreak = '连续互动';
+
+  // 订阅 / 权益
+  static const String subscription = '订阅与权益';
+  static const String planFree = '免费版';
+  static const String planFreeSub = '每天 50 条 AI 对话，记录 200 条长期记忆';
+  static const String planPro = 'Pro 版';
+  static const String planProSub = '每天 500 条 AI 对话，记录 1000 条长期记忆';
+  static const String quotaDaily = '今日 AI 对话额度';
+  static const String quotaDailyRemain = '今日剩余';
+  static const String quotaMemory = '长期记忆上限';
+  static const String quotaAdvancedModel = '高级模型';
+  static const String enabled = '已开启';
+  static const String disabled = '未开启';
+  static const String subscriptionSandbox = '沙盒开通（开发环境）';
+  static const String subscriptionUpgradePro = '升级到 Pro';
+  static const String subscriptionRenewPro = '续费 Pro';
+  static const String subscriptionBackFree = '恢复免费版';
+  static const String subscriptionSandboxHint = '当前为开发环境，可用沙盒直接切换套餐；正式支付请走真实回调。';
+  static const String goSubscribe = '去订阅';
+  static const String chatQuotaExhausted = '今天的 AI 对话额度用完啦，升级 Pro 可继续畅聊。';
 
   // 错误通用
   static const String errorOccurred = '操作失败，请重试';

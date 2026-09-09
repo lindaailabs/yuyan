@@ -3,48 +3,56 @@ package service
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/lindaailabs/yuyan/server/internal/pkg/errcode"
 	"github.com/lindaailabs/yuyan/server/internal/pkg/jwt"
 )
 
-func TestSendSmsCode(t *testing.T) {
+func TestRegister(t *testing.T) {
 	env := newServiceEnv(t)
 	ctx := context.Background()
+	phone, password := "13800138000", "secret123"
 
-	resp, err := env.svc.SendSmsCode(ctx, "13800138000")
+	resp, err := env.svc.Register(ctx, phone, password)
 	if err != nil {
-		t.Fatalf("SendSmsCode: %v", err)
+		t.Fatalf("Register: %v", err)
 	}
-	if len(resp.CaptchaImage) < 100 {
-		t.Errorf("captcha_image 应为有效 base64 PNG, got %d 字节", len(resp.CaptchaImage))
+	if resp.AccessToken == "" || resp.RefreshToken == "" || resp.ExpiresIn != 7200 {
+		t.Errorf("TokenPair 异常: %+v", resp)
 	}
 
-	// 限频：60s 内第二次。
-	if _, err := env.svc.SendSmsCode(ctx, "13800138000"); !isErrcode(err, 2001) {
-		t.Errorf("第二次应限频 2001, got %v", err)
+	// 重复注册应被拒（引导走登录）。
+	if _, err := env.svc.Register(ctx, phone, password); !isErrcode(err, 2004) {
+		t.Errorf("重复注册应 2004, got %v", err)
 	}
 
 	// 非法手机号。
-	for _, bad := range []string{"", "12345", "12345678901", "23800138000"} {
-		if _, err := env.svc.SendSmsCode(ctx, bad); !isErrcode(err, 1001) {
-			t.Errorf("非法手机号 %q 应 1001, got %v", bad, err)
-		}
+	if _, err := env.svc.Register(ctx, "12345", password); !isErrcode(err, 1001) {
+		t.Errorf("非法手机号应 1001, got %v", err)
+	}
+	// 密码过短。
+	if _, err := env.svc.Register(ctx, "13800138099", "123"); !isErrcode(err, 1001) {
+		t.Errorf("短密码应 1001, got %v", err)
 	}
 }
 
 func TestLoginNewUser(t *testing.T) {
 	env := newServiceEnv(t)
 	ctx := context.Background()
-	phone := "13811112222"
+	phone, password := "13811112222", "secret123"
 
-	code := env.sendCode(t, phone)
-	resp, err := env.svc.Login(ctx, phone, code)
+	// 未注册直接登录：凭证错误。
+	if _, err := env.svc.Login(ctx, phone, password); !isErrcode(err, 2005) {
+		t.Errorf("未注册登录应 2005, got %v", err)
+	}
+
+	// 注册后再登录成功。
+	env.register(t, phone, password)
+	resp, err := env.svc.Login(ctx, phone, password)
 	if err != nil {
 		t.Fatalf("Login: %v", err)
 	}
-	if resp.AccessToken == "" || resp.RefreshToken == "" || resp.ExpiresIn != 7200 {
+	if resp.AccessToken == "" || resp.RefreshToken == "" {
 		t.Errorf("TokenPair 异常: %+v", resp)
 	}
 
@@ -54,28 +62,32 @@ func TestLoginNewUser(t *testing.T) {
 		t.Errorf("access token 解析异常: uid=%d err=%v", uid, err)
 	}
 
-	// 验证码一次性：重放失败。
-	if _, err := env.svc.Login(ctx, phone, code); !isErrcode(err, 2002) {
-		t.Errorf("重放应 2002, got %v", err)
+	// 错误密码：凭证错误（且不泄露账号是否存在）。
+	if _, err := env.svc.Login(ctx, phone, "wrongpass"); !isErrcode(err, 2005) {
+		t.Errorf("错误密码应 2005, got %v", err)
 	}
 }
 
 func TestLoginExistingUserSameAccount(t *testing.T) {
 	env := newServiceEnv(t)
 	ctx := context.Background()
-	phone := "13822223333"
+	phone, password := "13822223333", "secret123"
 
-	first, err := env.svc.Login(ctx, phone, env.sendCode(t, phone))
-	if err != nil {
-		t.Fatalf("首次登录: %v", err)
+	first, err := env.svc.Login(ctx, phone, password)
+	// 首次未注册：2005，随后注册。
+	if !isErrcode(err, 2005) {
+		t.Fatalf("首次未注册应 2005, got %v", err)
 	}
-	// 推进 61s 使限频标记过期（代码 TTL 5min 不受影响）。
-	env.mr.FastForward(time.Minute + time.Second)
-	second, err := env.svc.Login(ctx, phone, env.sendCode(t, phone))
+	env.register(t, phone, password)
+	first, err = env.svc.Login(ctx, phone, password)
+	if err != nil {
+		t.Fatalf("注册后登录: %v", err)
+	}
+	second, err := env.svc.Login(ctx, phone, password)
 	if err != nil {
 		t.Fatalf("二次登录: %v", err)
 	}
-	// 两次登录 uid 一致（同一账号，自动注册只发生一次）。
+	// 两次登录 uid 一致（同一账号）。
 	m := jwt.NewManager("unit-test-secret")
 	uid1, _ := m.Parse(first.AccessToken, jwt.TypeAccess)
 	uid2, _ := m.Parse(second.AccessToken, jwt.TypeAccess)
@@ -84,38 +96,24 @@ func TestLoginExistingUserSameAccount(t *testing.T) {
 	}
 }
 
-func TestLoginWrongCode(t *testing.T) {
-	env := newServiceEnv(t)
-	ctx := context.Background()
-	phone := "13833334444"
-
-	env.sendCode(t, phone)
-	if _, err := env.svc.Login(ctx, phone, "000000"); !isErrcode(err, 2002) {
-		t.Errorf("错误验证码应 2002, got %v", err)
-	}
-	// 错误尝试不消耗原验证码。
-	if _, err := env.svc.Login(ctx, phone, env.storedCode(t, phone)); err != nil {
-		t.Fatalf("错误尝试后正确码登录: %v", err)
-	}
-}
-
 func TestLoginBadPhone(t *testing.T) {
 	env := newServiceEnv(t)
 	ctx := context.Background()
-	if _, err := env.svc.Login(ctx, "12345", "123456"); !isErrcode(err, 1001) {
+	if _, err := env.svc.Login(ctx, "12345", "secret123"); !isErrcode(err, 1001) {
 		t.Errorf("非法手机号登录应 1001, got %v", err)
 	}
 	if _, err := env.svc.Login(ctx, "13800138000", ""); !isErrcode(err, 1001) {
-		t.Errorf("空验证码应 1001, got %v", err)
+		t.Errorf("空密码应 1001, got %v", err)
 	}
 }
 
 func TestRefresh(t *testing.T) {
 	env := newServiceEnv(t)
 	ctx := context.Background()
-	phone := "13844445555"
+	phone, password := "13844445555", "secret123"
 
-	login, err := env.svc.Login(ctx, phone, env.sendCode(t, phone))
+	env.register(t, phone, password)
+	login, err := env.svc.Login(ctx, phone, password)
 	if err != nil {
 		t.Fatalf("Login: %v", err)
 	}

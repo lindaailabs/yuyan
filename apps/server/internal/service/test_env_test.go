@@ -32,12 +32,8 @@ func gormOpen(dsn string) (*gorm.DB, error) {
 }
 
 // newAuthService 装配 AuthService（生产 main.go 同款路径）。
-func newAuthService(rdb *redis.Client, gdb *gorm.DB, secret string) *AuthService {
-	return NewAuthService(
-		repo.NewCaptchaRepo(rdb),
-		repo.NewUserRepo(gdb),
-		jwt.NewManager(secret),
-	)
+func newAuthService(gdb *gorm.DB, secret string) *AuthService {
+	return NewAuthService(repo.NewUserRepo(gdb), jwt.NewManager(secret))
 }
 
 // serviceEnv 测试环境：miniredis + MySQL 容器（含 migration）。
@@ -74,7 +70,7 @@ func newServiceEnv(t *testing.T) *serviceEnv {
 		t.Fatalf("gorm open: %v", err)
 	}
 
-	svc := newAuthService(rdb, gdb, "unit-test-secret")
+	svc := newAuthService(gdb, "unit-test-secret")
 	userRepo := repo.NewUserRepo(gdb)
 	return &serviceEnv{
 		rdb:  rdb,
@@ -85,7 +81,7 @@ func newServiceEnv(t *testing.T) *serviceEnv {
 	}
 }
 
-// createUser 直插测试用户（绕过验证码路径），返回 uid。
+// createUser 直插测试用户（绕过注册路径），返回 uid。
 func (e *serviceEnv) createUser(t *testing.T, phone string) int64 {
 	t.Helper()
 	u, err := e.ur.CreateUser(context.Background(), phone)
@@ -95,21 +91,12 @@ func (e *serviceEnv) createUser(t *testing.T, phone string) int64 {
 	return u.ID
 }
 
-// storedCode 从 Redis 读取已下发的验证码（模拟用户看图/收短信输入）。
-func (e *serviceEnv) storedCode(t *testing.T, phone string) string {
+// register 走正常注册路径（手机号+密码），返回双 token。
+func (e *serviceEnv) register(t *testing.T, phone, password string) *LoginResponse {
 	t.Helper()
-	code, err := e.rdb.Get(context.Background(), "sms:code:"+phone).Result()
+	resp, err := e.svc.Register(context.Background(), phone, password)
 	if err != nil {
-		t.Fatalf("read stored code: %v", err)
+		t.Fatalf("register: %v", err)
 	}
-	return code
-}
-
-// sendCode 下发并取回验证码。
-func (e *serviceEnv) sendCode(t *testing.T, phone string) string {
-	t.Helper()
-	if _, err := e.svc.SendSmsCode(context.Background(), phone); err != nil {
-		t.Fatalf("SendSmsCode: %v", err)
-	}
-	return e.storedCode(t, phone)
+	return resp
 }

@@ -23,11 +23,12 @@ const maxPetPersonaLen = 2000
 
 // PetService 宠物档案业务逻辑。
 type PetService struct {
-	pets *repo.PetRepo
+	pets     *repo.PetRepo
+	analytics *AnalyticsService
 }
 
-func NewPetService(pets *repo.PetRepo) *PetService {
-	return &PetService{pets: pets}
+func NewPetService(pets *repo.PetRepo, analytics *AnalyticsService) *PetService {
+	return &PetService{pets: pets, analytics: analytics}
 }
 
 func (s *PetService) Create(ctx context.Context, uid int64, in *model.CreatePetInput) (*model.PetProfile, error) {
@@ -68,6 +69,9 @@ func (s *PetService) Create(ctx context.Context, uid int64, in *model.CreatePetI
 	}
 	if err := s.pets.Create(ctx, pet); err != nil {
 		return nil, fmt.Errorf("create pet: %w", err)
+	}
+	if s.analytics != nil {
+		s.analytics.Track(ctx, uid, "pet_created", map[string]any{"pet_id": pet.ID, "species": pet.Species})
 	}
 	return toPetProfile(pet), nil
 }

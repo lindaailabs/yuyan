@@ -36,6 +36,8 @@ const (
 // Provider 名称常量。
 const (
 	ProviderMock = "mock"
+	// ProviderOpenAI 为 OpenAI 兼容端点（base_url + api_key + model），支持主流兼容服务。
+	ProviderOpenAI = "openai"
 )
 
 // defaultAttempts 最多尝试次数（1 次正常 + 1 次重试）。
@@ -90,9 +92,14 @@ type Provider interface {
 
 // Config Gateway 配置（由 config 包读取环境变量后传入）。
 type Config struct {
-	Provider     string  // mock（默认）；未实现的取值启动即失败
+	Provider     string  // mock（默认）；openai（OpenAI 兼容）；未实现的取值启动即失败
 	TimeoutMS    int     // 单次调用超时
 	MockFailRate float64 // 仅 mock 生效：注入失败率，用于验证兜底路径
+
+	// OpenAI 兼容配置（provider=openai 时使用）。
+	BaseURL string // 兼容端点，如 https://api.openai.com/v1
+	APIKey  string // 模型服务 API Key
+	Model   string // 模型名
 }
 
 type gateway struct {
@@ -118,6 +125,8 @@ func newProvider(cfg Config) (Provider, error) {
 	switch strings.ToLower(strings.TrimSpace(cfg.Provider)) {
 	case "", ProviderMock:
 		return NewMockProvider(cfg.MockFailRate), nil
+	case ProviderOpenAI:
+		return NewOpenAIProvider(cfg)
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrProviderNotConfigured, cfg.Provider)
 	}

@@ -38,3 +38,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/avatars/
+    - assets/config.json
+    - assets/config.test.json
+    - assets/config.prod.json

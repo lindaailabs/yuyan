@@ -34,13 +34,15 @@ const (
 // ConversationService 宠物对话业务逻辑：会话、消息、AI Gateway 编排与用量落库。
 // AI 调用不进事务：单行写入本身原子，模型 RT 不占用 DB 连接与行锁。
 type ConversationService struct {
-	conv   *repo.ConversationRepo
-	msgs   *repo.MessageRepo
-	logs   *repo.AICallLogRepo
-	pets   *repo.PetRepo
-	mem    *MemoryService
-	growth *GrowthService
-	gw     ai.Gateway
+	conv     *repo.ConversationRepo
+	msgs     *repo.MessageRepo
+	logs     *repo.AICallLogRepo
+	pets     *repo.PetRepo
+	mem      *MemoryService
+	growth   *GrowthService
+	ent      *EntitlementService
+	analytics *AnalyticsService
+	gw       ai.Gateway
 }
 
 // NewConversationService 构造。mem 为 nil 时跳过记忆抽取与召回（便于单测裁剪）。
@@ -52,15 +54,19 @@ func NewConversationService(
 	mem *MemoryService,
 	growth *GrowthService,
 	gw ai.Gateway,
+	ent *EntitlementService,
+	analytics *AnalyticsService,
 ) *ConversationService {
 	return &ConversationService{
-		conv:   conv,
-		msgs:   msgs,
-		logs:   logs,
-		pets:   pets,
-		mem:    mem,
-		growth: growth,
-		gw:     gw,
+		conv:     conv,
+		msgs:     msgs,
+		logs:     logs,
+		pets:     pets,
+		mem:      mem,
+		growth:   growth,
+		ent:      ent,
+		analytics: analytics,
+		gw:       gw,
 	}
 }
 
@@ -132,6 +138,14 @@ func (s *ConversationService) SendMessage(ctx context.Context, uid int64, in *mo
 	if err != nil {
 		return nil, err
 	}
+	// 额度校验：超额直接拒绝（25xx），不写消息、不调用 AI（guide §7：客户端仅展示，服务端判定）。
+	if s.ent != nil {
+		if err := s.ent.ConsumeAIMessage(ctx, uid); err != nil {
+			s.track(ctx, uid, "ai_quota_rejected", map[string]any{"pet_id": pet.ID})
+			return nil, err
+		}
+	}
+
 	conv, err := s.conv.GetOrCreate(ctx, uid, pet.ID)
 	if err != nil {
 		return nil, fmt.Errorf("get or create conversation: %w", err)
@@ -159,6 +173,8 @@ func (s *ConversationService) SendMessage(ctx context.Context, uid int64, in *mo
 	newMemories, err := s.extractMemories(ctx, uid, pet.ID, userMsg.ID, content)
 	if err != nil {
 		slog.Warn("memory extract failed", "err", err, "user_id", uid)
+	} else if len(newMemories) > 0 {
+		s.track(ctx, uid, "memory_created", map[string]any{"pet_id": pet.ID, "count": len(newMemories)})
 	}
 	// 记忆召回：只取少量相关事实进入上下文（guide §5）。
 	memories, err := s.recallMemories(ctx, pet.ID, content)
@@ -213,7 +229,7 @@ func (s *ConversationService) SendMessage(ctx context.Context, uid int64, in *mo
 		return nil, fmt.Errorf("insert assistant message: %w", err)
 	}
 	// 成长结算：确定性规则，以宠物回复消息 id 为幂等键（重复结算不加经验）。
-	s.applyGrowth(ctx, uid, pet.ID, assistantMsg.ID, aiErr != nil)
+	s.applyGrowth(ctx, uid, pet.ID, assistantMsg.ID, aiErr != nil, pet.Level, pet.Intimacy)
 
 	// 会话预览与调用日志失败不影响本次对话结果，仅告警。
 	if err := s.conv.UpdateLastMessage(ctx, conv.ID, assistantMsg.ID, assistantMsg.Content); err != nil {
@@ -233,13 +249,30 @@ func (s *ConversationService) SendMessage(ctx context.Context, uid int64, in *mo
 }
 
 // applyGrowth 结算成长（未配置成长服务时跳过；失败仅告警，不影响对话）。
-func (s *ConversationService) applyGrowth(ctx context.Context, uid, petID, msgID int64, aiFailed bool) {
+// prevLevel/prevIntimacy 为结算前数值，用于埋点「升级」「首轮对话」。
+func (s *ConversationService) applyGrowth(ctx context.Context, uid, petID, msgID int64, aiFailed bool, prevLevel, prevIntimacy int) {
 	if s.growth == nil {
 		return
 	}
-	if _, err := s.growth.ApplyInteraction(ctx, uid, petID, msgID, aiFailed); err != nil {
+	state, err := s.growth.ApplyInteraction(ctx, uid, petID, msgID, aiFailed)
+	if err != nil {
 		slog.Warn("growth apply failed", "err", err, "pet_id", petID)
+		return
 	}
+	if prevIntimacy == 0 {
+		s.track(ctx, uid, "first_message", map[string]any{"pet_id": petID})
+	}
+	if state.Level > prevLevel {
+		s.track(ctx, uid, "level_up", map[string]any{"pet_id": petID, "from": prevLevel, "to": state.Level})
+	}
+}
+
+// track 关键路径埋点（未配置分析服务时跳过；失败仅告警，不阻断业务）。
+func (s *ConversationService) track(ctx context.Context, uid int64, name string, props map[string]any) {
+	if s.analytics == nil {
+		return
+	}
+	s.analytics.Track(ctx, uid, name, props)
 }
 
 // extractMemories 抽取本轮新形成的记忆（未配置记忆服务时返回 nil）。

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/chat/chat_controller.dart';
 import '../../core/l10n/zh.dart';
@@ -139,6 +140,8 @@ class _ChatPageState extends ConsumerState<ChatPage>
       body: Column(
         children: [
           if (state.error != null) _ErrorBanner(message: state.error!),
+          if (state.quotaExhausted)
+            _QuotaBanner(onUpgrade: () => context.push('/subscription')),
           if (state.newMemories.isNotEmpty)
             _MemoryBanner(memories: state.newMemories),
           Expanded(child: _buildBody(state, petName)),
@@ -220,6 +223,41 @@ class _ErrorBanner extends StatelessWidget {
             child: Text(
               message,
               style: const TextStyle(fontSize: 12, color: _danger),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 当日 AI 额度耗尽引导（服务端 2501）：引导前往订阅页。
+class _QuotaBanner extends StatelessWidget {
+  const _QuotaBanner({required this.onUpgrade});
+
+  final VoidCallback onUpgrade;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: _accent.withValues(alpha: 0.14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          const Icon(Icons.workspace_premium_rounded, size: 16, color: _accent),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              Zh.chatQuotaExhausted,
+              style: const TextStyle(fontSize: 12, color: _ink),
+            ),
+          ),
+          TextButton(
+            onPressed: onUpgrade,
+            child: Text(
+              Zh.goSubscribe,
+              style: const TextStyle(fontSize: 12, color: _primary),
             ),
           ),
         ],
