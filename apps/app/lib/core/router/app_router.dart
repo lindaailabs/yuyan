@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../auth/auth_state.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/onboarding_page.dart';
+import '../../features/chat/chat_page.dart';
 import '../../features/contacts/contacts_page.dart';
 import '../../features/contacts/requests_page.dart';
 import '../../features/contacts/search_page.dart';
@@ -28,6 +29,16 @@ GoRouter buildRouter(ValueListenable<AuthState> authState) {
       GoRoute(
         path: '/pet/create',
         builder: (context, state) => const CreatePetPage(),
+      ),
+      GoRoute(
+        path: '/chat/:petId',
+        redirect: (context, state) =>
+            int.tryParse(state.pathParameters['petId'] ?? '') == null
+                ? '/home'
+                : null,
+        builder: (context, state) => ChatPage(
+          petId: int.parse(state.pathParameters['petId']!),
+        ),
       ),
       GoRoute(
         path: '/profile',

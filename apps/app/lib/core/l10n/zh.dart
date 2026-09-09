@@ -79,6 +79,19 @@ class Zh {
   static const String requestsAccept = '同意';
   static const String requestsReject = '拒绝';
 
+  // 聊天
+  static const String chatGreeting = '嗨，我在这儿陪你';
+  static const String chatEmptyHint = '说点什么开始我们的第一次对话吧';
+  static const String chatInputHint = '说点什么…';
+  static const String chatChip1 = '今天过得怎么样？';
+  static const String chatChip2 = '陪我聊聊天';
+  static const String chatChip3 = '讲个小故事';
+  static const String chatThinking = '正在思考…';
+  static const String chatFailedHint = '发送失败，点击重试';
+  static const String chatSendFailed = '消息没发出去，请重试';
+  static const String chatLoadMore = '加载更多';
+  static const String chatSyncing = '正在同步新消息…';
+
   // 错误通用
   static const String errorOccurred = '操作失败，请重试';
 }

@@ -6,6 +6,9 @@ import 'package:yuyan_app/data/remote/api_exception.dart';
 class FakeApiClient implements ApiClient {
   final Map<String, Future<Map<String, dynamic>> Function()> handlers = {};
 
+  /// 最近一次 POST/PUT 的请求体（断言幂等键等提交内容）。
+  Map<String, dynamic>? lastBody;
+
   Future<Map<String, dynamic>> _run(String method, String path) {
     final h = handlers['$method $path'];
     if (h == null) {
@@ -27,8 +30,10 @@ class FakeApiClient implements ApiClient {
 
   @override
   Future<Map<String, dynamic>> post(String path,
-          {Map<String, dynamic>? body}) =>
-      _run('POST', path);
+      {Map<String, dynamic>? body}) {
+    lastBody = body;
+    return _run('POST', path);
+  }
 
   @override
   Future<Map<String, dynamic>> put(String path,

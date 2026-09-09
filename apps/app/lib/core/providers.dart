@@ -1,13 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/local/app_database.dart';
 import '../data/remote/api_client.dart';
 import '../data/remote/dio_api_client.dart';
 import '../data/repository/auth_repository.dart';
 import '../data/repository/contacts_repository.dart';
+import '../data/repository/pet_chat_repository.dart';
 import '../data/repository/pet_repository.dart';
 import 'auth/auth_controller.dart';
 import 'auth/auth_state.dart';
 import 'auth/token_storage.dart';
+import 'chat/chat_controller.dart';
 import 'contacts/contacts_controller.dart';
 import 'pet/pet_controller.dart';
 
@@ -48,6 +51,39 @@ final StateNotifierProvider<AuthController, AuthState> authControllerProvider =
         ref.watch(tokenStorageProvider),
       );
       controller.init();
+      return controller;
+    });
+
+/// 本地库（drift）：进程内缓存消息与宠物状态。
+final Provider<AppDatabase> appDatabaseProvider = Provider<AppDatabase>((ref) {
+  final db = AppDatabase();
+  ref.onDispose(db.close);
+  return db;
+});
+
+/// 本地消息 DAO。
+final Provider<MessageDao> messageDaoProvider = Provider<MessageDao>(
+  (ref) => MessageDao(ref.watch(appDatabaseProvider)),
+);
+
+/// 宠物对话仓库（远端 + 本地缓存合并）。
+final Provider<PetChatRepository> petChatRepositoryProvider =
+    Provider<PetChatRepository>(
+      (ref) => PetChatRepository(
+        ref.watch(apiClientProvider),
+        ref.watch(messageDaoProvider),
+      ),
+    );
+
+/// 聊天页状态机（按宠物 id 分实例，进入时加载本地并增量同步）。
+final StateNotifierProviderFamily<ChatController, ChatState, int>
+chatControllerProvider =
+    StateNotifierProvider.family<ChatController, ChatState, int>((ref, petId) {
+      final controller = ChatController(
+        ref.watch(petChatRepositoryProvider),
+        petId: petId,
+      );
+      controller.open();
       return controller;
     });
 
