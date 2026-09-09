@@ -113,8 +113,10 @@ type SendMessageResult struct {
 	UserMessage    MessageItem `json:"user_message"`
 	// AssistantMessage 为 nil 表示回复尚未生成（幂等重放时可能出现），客户端按待回复处理。
 	AssistantMessage *MessageItem `json:"assistant_message,omitempty"`
-	Streaming        bool         `json:"streaming"`
-	Usage            UsageSummary `json:"usage"`
+	// NewMemories 本轮新形成的长期记忆（聊天页轻量提示用）。
+	NewMemories []MemoryItem `json:"new_memories,omitempty"`
+	Streaming   bool         `json:"streaming"`
+	Usage       UsageSummary `json:"usage"`
 }
 
 // UsageSummary 单次调用的用量摘要（guide §5：token/模型/耗时/缓存命中）。

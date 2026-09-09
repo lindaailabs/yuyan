@@ -80,6 +80,10 @@ func mockReply(req *CompletionRequest) string {
 		idx = int(h.Sum32() % uint32(len(mockReplies)))
 	}
 	body := mockReplies[idx]
+	// 命中长期记忆时把记忆体现到回复中，便于端到端验证召回链路。
+	if req != nil && len(req.Memories) > 0 {
+		return fmt.Sprintf("%s：我记得%s，%s", petName, req.Memories[0], body)
+	}
 	// 回指用户输入，让回复看起来有上下文（长度受控，避免超长）。
 	if n := utf8.RuneCountInString(input); n > 0 && n <= 20 {
 		return fmt.Sprintf("%s（你说了「%s」）%s", petName, input, body)

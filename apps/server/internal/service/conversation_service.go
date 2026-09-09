@@ -38,18 +38,20 @@ type ConversationService struct {
 	msgs *repo.MessageRepo
 	logs *repo.AICallLogRepo
 	pets *repo.PetRepo
+	mem  *MemoryService
 	gw   ai.Gateway
 }
 
-// NewConversationService 构造。
+// NewConversationService 构造。mem 为 nil 时跳过记忆抽取与召回（便于单测裁剪）。
 func NewConversationService(
 	conv *repo.ConversationRepo,
 	msgs *repo.MessageRepo,
 	logs *repo.AICallLogRepo,
 	pets *repo.PetRepo,
+	mem *MemoryService,
 	gw ai.Gateway,
 ) *ConversationService {
-	return &ConversationService{conv: conv, msgs: msgs, logs: logs, pets: pets, gw: gw}
+	return &ConversationService{conv: conv, msgs: msgs, logs: logs, pets: pets, mem: mem, gw: gw}
 }
 
 // GetOrCreateConversation 创建或获取「当前用户 + 宠物」的会话。
@@ -143,6 +145,17 @@ func (s *ConversationService) SendMessage(ctx context.Context, uid int64, in *mo
 		return nil, fmt.Errorf("insert user message: %w", err)
 	}
 
+	// 记忆抽取：失败只告警，不阻断本轮对话（记忆是增值能力）。
+	newMemories, err := s.extractMemories(ctx, uid, pet.ID, userMsg.ID, content)
+	if err != nil {
+		slog.Warn("memory extract failed", "err", err, "user_id", uid)
+	}
+	// 记忆召回：只取少量相关事实进入上下文（guide §5）。
+	memories, err := s.recallMemories(ctx, pet.ID, content)
+	if err != nil {
+		slog.Warn("memory recall failed", "err", err, "user_id", uid)
+	}
+
 	turns, err := s.recentTurns(ctx, conv.ID, userMsg.ID)
 	if err != nil {
 		return nil, err
@@ -154,6 +167,7 @@ func (s *ConversationService) SendMessage(ctx context.Context, uid int64, in *mo
 		PetName:   pet.Name,
 		Persona:   deref(pet.Persona),
 		Growth:    fmt.Sprintf("等级 %d，亲密度 %d，心情 %s", pet.Level, pet.Intimacy, pet.Mood),
+		Memories:  memories,
 		Recent:    turns,
 		UserInput: content,
 	})
@@ -199,9 +213,26 @@ func (s *ConversationService) SendMessage(ctx context.Context, uid int64, in *mo
 		ConversationID:   conv.ID,
 		UserMessage:      model.ToMessageItem(userMsg),
 		AssistantMessage: &item,
+		NewMemories:      newMemories,
 		Streaming:        false, // 流式留待 protocol-v2
 		Usage:            usageOf(res, aiErr),
 	}, nil
+}
+
+// extractMemories 抽取本轮新形成的记忆（未配置记忆服务时返回 nil）。
+func (s *ConversationService) extractMemories(ctx context.Context, uid, petID, msgID int64, content string) ([]model.MemoryItem, error) {
+	if s.mem == nil {
+		return nil, nil
+	}
+	return s.mem.Extract(ctx, uid, petID, msgID, content)
+}
+
+// recallMemories 召回与当前输入相关的少量记忆。
+func (s *ConversationService) recallMemories(ctx context.Context, petID int64, query string) ([]string, error) {
+	if s.mem == nil {
+		return nil, nil
+	}
+	return s.mem.Recall(ctx, petID, query, DefaultRecallLimit)
 }
 
 // replayResult 幂等重放：返回首次的用户消息与其后的宠物回复。
