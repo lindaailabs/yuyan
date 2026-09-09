@@ -28,3 +28,8 @@ apps/app/build/
 
 # 本地后端环境配置（含密钥，用 config.test.yaml.example 作模板）
 /apps/server/config.test.yaml
+
+# 本地运行日志（后端/Flutter/Go 测试产物，不入库）
+_backend_run.log
+_flutter_run.log
+_go_test.log
