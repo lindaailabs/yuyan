@@ -31,6 +31,8 @@ class Zh {
   static const String homePlaceholder = '会话列表将在这里出现';
   static const String homeProfile = '我的资料';
   static const String homeSearch = '搜索用户';
+  static const String homeContacts = '通讯录';
+  static const String homeRequests = '好友申请';
 
   // 资料页
   static const String profileTitle = '我的资料';
@@ -46,6 +48,18 @@ class Zh {
   static const String searchSubmit = '搜索';
   static const String searchEmpty = '未找到该用户';
   static const String searchAddFriend = '加好友';
+  static const String searchRequestSent = '已申请';
+
+  // 通讯录
+  static const String contactsTitle = '通讯录';
+  static const String contactsEmpty = '还没有好友，去搜索添加吧';
+  static const String contactsGoAdd = '去添加好友';
+
+  // 好友申请
+  static const String requestsTitle = '好友申请';
+  static const String requestsEmpty = '暂无新的好友申请';
+  static const String requestsAccept = '同意';
+  static const String requestsReject = '拒绝';
 
   // 错误通用
   static const String errorOccurred = '操作失败，请重试';

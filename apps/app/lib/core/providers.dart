@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/remote/api_client.dart';
 import '../data/remote/dio_api_client.dart';
 import '../data/repository/auth_repository.dart';
+import '../data/repository/contacts_repository.dart';
 import 'auth/auth_controller.dart';
 import 'auth/auth_state.dart';
 import 'auth/token_storage.dart';
+import 'contacts/contacts_controller.dart';
 
 /// API 基地址：默认 Android 模拟器宿主机 loopback；真机/桌面用 --dart-define=API_BASE_URL= 覆盖。
 const apiBaseUrl = String.fromEnvironment(
@@ -40,5 +42,19 @@ final StateNotifierProvider<AuthController, AuthState> authControllerProvider =
     ref.watch(tokenStorageProvider),
   );
   controller.init();
+  return controller;
+});
+
+/// 好友域仓库。
+final Provider<ContactsRepository> contactsRepositoryProvider =
+    Provider<ContactsRepository>(
+        (ref) => ContactsRepository(ref.watch(apiClientProvider)));
+
+/// 好友域状态机（provider 首次被读取时预载双列表）。
+final StateNotifierProvider<ContactsController, ContactsState>
+    contactsControllerProvider =
+    StateNotifierProvider<ContactsController, ContactsState>((ref) {
+  final controller = ContactsController(ref.watch(contactsRepositoryProvider));
+  controller.loadAll();
   return controller;
 });

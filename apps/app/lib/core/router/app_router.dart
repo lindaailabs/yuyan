@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../auth/auth_state.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/onboarding_page.dart';
+import '../../features/contacts/contacts_page.dart';
+import '../../features/contacts/requests_page.dart';
 import '../../features/contacts/search_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/profile/profile_page.dart';
@@ -35,6 +37,14 @@ GoRouter buildRouter(ValueListenable<AuthState> authState) {
       GoRoute(
         path: '/search',
         builder: (context, state) => const SearchPage(),
+      ),
+      GoRoute(
+        path: '/contacts',
+        builder: (context, state) => const ContactsPage(),
+      ),
+      GoRoute(
+        path: '/requests',
+        builder: (context, state) => const RequestsPage(),
       ),
     ],
   );

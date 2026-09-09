@@ -2,54 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:yuyan_app/core/auth/auth_controller.dart';
 import 'package:yuyan_app/core/auth/auth_state.dart';
 import 'package:yuyan_app/core/auth/token_storage.dart';
-import 'package:yuyan_app/data/remote/api_client.dart';
 import 'package:yuyan_app/data/remote/api_exception.dart';
 import 'package:yuyan_app/data/repository/auth_repository.dart';
 
-/// ApiClient 假实现：按 path 路由到可编排的 handler。
-class _FakeApiClient implements ApiClient {
-  final Map<String, Future<Map<String, dynamic>> Function()> handlers = {};
-
-  @override
-  Future<Map<String, dynamic>> get(String path,
-      {Map<String, dynamic>? query}) async {
-    final h = handlers['GET $path'];
-    if (h == null) {
-      throw ApiException(500, 'no handler: GET $path');
-    }
-    return h();
-  }
-
-  @override
-  Future<List<dynamic>> getList(String path,
-      {Map<String, dynamic>? query}) async {
-    final h = handlers['GET $path'];
-    if (h == null) {
-      throw ApiException(500, 'no handler: GET $path');
-    }
-    return (await h())['items'] as List<dynamic>;
-  }
-
-  @override
-  Future<Map<String, dynamic>> post(String path,
-      {Map<String, dynamic>? body}) async {
-    final h = handlers['POST $path'];
-    if (h == null) {
-      throw ApiException(500, 'no handler: POST $path');
-    }
-    return h();
-  }
-
-  @override
-  Future<Map<String, dynamic>> put(String path,
-      {Map<String, dynamic>? body}) async {
-    final h = handlers['PUT $path'];
-    if (h == null) {
-      throw ApiException(500, 'no handler: PUT $path');
-    }
-    return h();
-  }
-}
+import '../../support/fake_api_client.dart';
 
 Map<String, dynamic> _meJson({String? nickname}) => {
       'id': 1,
@@ -60,12 +16,12 @@ Map<String, dynamic> _meJson({String? nickname}) => {
     };
 
 void main() {
-  late _FakeApiClient api;
+  late FakeApiClient api;
   late MemoryTokenStorage storage;
   late AuthRepository repo;
 
   setUp(() {
-    api = _FakeApiClient();
+    api = FakeApiClient();
     storage = MemoryTokenStorage();
     repo = AuthRepository(api);
   });
