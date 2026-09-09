@@ -68,7 +68,7 @@
 **目标**: 好友申请-同意闭环，双方通讯录就绪。
 
 - migration：`friendships` 表（双向各一行，SMALLINT 状态常量）
-- REST：`POST /friends/requests`（含防重复申请、不能加自己）、`GET /friends/requests`、`POST /friends/requests/{id}/accept`（事务内写双向两行）、`GET /friends`
+- REST：`POST /friends/requests`（含防重复申请、不能加自己）、`GET /friends/requests`、`POST /friends/requests/{id}/accept`（事务内写双向两行）、`POST /friends/requests/{id}/reject`（状态标记 4=rejected，不物理删除）、`GET /friends`
 - App：好友申请列表页（同意/拒绝）、通讯录页、加好友入口（复用搜索页）
 - 测试：accept 事务原子性单测；防重复/非法参数 error path
 
