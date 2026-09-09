@@ -101,6 +101,17 @@ App：
 
 验收：用户说“我喜欢蓝色”，后续问“你记得我喜欢什么颜色吗”能回答；用户删除该记忆后不能再召回。
 
+状态（W3 已交付，见 `openspec/changes/add-pet-memory`）：
+
+- migration `pet_memories`：`uk_pet_hash` 去重、`idx_pet_status` 召回，status 1=active 2=archived 3=deleted（禁止物理删除）。
+- 抽取：服务端确定性规则（偏好/称呼/画像/事件），记录来源消息 id 与置信度；同一事实重复表达不新增。
+- 召回：字符二元组相关度打分，TopN（默认 3）注入 Gateway 上下文「长期记忆」段，并更新 `last_used_at`。
+- REST：`GET /api/v1/pets/{id}/memories`、`DELETE /api/v1/pet-memories/{id}`（软删除，2401 越权/不存在）。
+- 对话响应新增 `new_memories`；mock provider 命中记忆时把记忆体现到回复，便于端到端验证。
+- App：记忆页（列表 + 删除确认 + 空/错/加载态）、主页「记忆」入口、聊天页新记忆提示。
+- 全栈冒烟 `scripts/smoke-pet-memory.ps1`：偏好 → 召回体现 → 删除后不召回且列表不可见。
+- TEST-GAP：真机/模拟器 UI 走查未执行（本机无 Android SDK）；模型驱动的自动抽取待真实 provider 接入后扩展。
+
 ## W4 成长系统与每日回访
 
 目标：宠物不是聊天壳，而是会随互动成长。
