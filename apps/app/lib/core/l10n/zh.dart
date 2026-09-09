@@ -104,6 +104,15 @@ class Zh {
   static const String memoryDeleteFailed = '删除失败，请重试';
   static const String chatNewMemory = '记住了';
 
+  // 成长
+  static const String growthTitle = '成长记录';
+  static const String growthEmpty = '还没有成长记录';
+  static const String growthEmptyHint = '多陪它说说话，每一次变化都会记在这里';
+  static const String growthTypeMessage = '一次陪伴';
+  static const String growthTypeLevelUp = '升级啦';
+  static const String growthTypeMood = '心情变化';
+  static const String growthTypeStreak = '连续互动';
+
   // 错误通用
   static const String errorOccurred = '操作失败，请重试';
 }

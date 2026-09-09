@@ -6,6 +6,7 @@ import '../data/remote/dio_api_client.dart';
 import '../data/repository/auth_repository.dart';
 import '../data/repository/contacts_repository.dart';
 import '../data/repository/pet_chat_repository.dart';
+import '../data/repository/pet_growth_repository.dart';
 import '../data/repository/pet_memory_repository.dart';
 import '../data/repository/pet_repository.dart';
 import 'auth/auth_controller.dart';
@@ -13,6 +14,7 @@ import 'auth/auth_state.dart';
 import 'auth/token_storage.dart';
 import 'chat/chat_controller.dart';
 import 'contacts/contacts_controller.dart';
+import 'growth/growth_controller.dart';
 import 'memory/memory_controller.dart';
 import 'pet/pet_controller.dart';
 
@@ -102,6 +104,23 @@ memoryControllerProvider =
         (ref, petId) {
       return MemoryController(
         ref.watch(petMemoryRepositoryProvider),
+        petId: petId,
+      );
+    });
+
+/// 成长事件仓库。
+final Provider<PetGrowthRepository> petGrowthRepositoryProvider =
+    Provider<PetGrowthRepository>(
+      (ref) => PetGrowthRepository(ref.watch(apiClientProvider)),
+    );
+
+/// 成长时间线状态机（按宠物 id 分实例）。
+final StateNotifierProviderFamily<GrowthController, GrowthState, int>
+growthControllerProvider =
+    StateNotifierProvider.family<GrowthController, GrowthState, int>(
+        (ref, petId) {
+      return GrowthController(
+        ref.watch(petGrowthRepositoryProvider),
         petId: petId,
       );
     });

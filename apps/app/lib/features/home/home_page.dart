@@ -49,6 +49,7 @@ class HomePage extends ConsumerWidget {
                 onCreate: () => context.go('/pet/create'),
                 onChat: () => context.go('/chat/${state.current!.id}'),
                 onMemory: () => context.go('/memories/${state.current!.id}'),
+                onGrowth: () => context.go('/growth/${state.current!.id}'),
               ),
           ],
         ),
@@ -113,6 +114,7 @@ class _PetHomeView extends StatelessWidget {
     required this.onCreate,
     required this.onChat,
     required this.onMemory,
+    required this.onGrowth,
     this.error,
   });
 
@@ -120,6 +122,7 @@ class _PetHomeView extends StatelessWidget {
   final VoidCallback onCreate;
   final VoidCallback onChat;
   final VoidCallback onMemory;
+  final VoidCallback onGrowth;
   final String? error;
 
   @override
@@ -179,7 +182,7 @@ class _PetHomeView extends StatelessWidget {
         _ActionButton(
           icon: Icons.trending_up,
           label: Zh.homePetGrowth,
-          message: Zh.homePetGrowthComing,
+          onTap: onGrowth,
         ),
       ],
     );
@@ -223,24 +226,17 @@ class _ActionButton extends StatelessWidget {
   const _ActionButton({
     required this.icon,
     required this.label,
-    this.onTap,
-    this.message,
+    required this.onTap,
   });
 
   final IconData icon;
   final String label;
-  final VoidCallback? onTap;
-
-  /// 未接入的能力（记忆/成长）点击后给出占位提示。
-  final String? message;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return OutlinedButton.icon(
-      onPressed: onTap ??
-          () => ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(message ?? ''))),
+      onPressed: onTap,
       icon: Icon(icon),
       label: Text(label),
     );

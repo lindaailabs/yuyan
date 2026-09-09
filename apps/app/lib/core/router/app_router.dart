@@ -8,6 +8,7 @@ import '../../features/chat/chat_page.dart';
 import '../../features/contacts/contacts_page.dart';
 import '../../features/contacts/requests_page.dart';
 import '../../features/contacts/search_page.dart';
+import '../../features/growth/growth_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/memory/memory_page.dart';
 import '../../features/pet/create_pet_page.dart';
@@ -38,6 +39,16 @@ GoRouter buildRouter(ValueListenable<AuthState> authState) {
                 ? '/home'
                 : null,
         builder: (context, state) => MemoryPage(
+          petId: int.parse(state.pathParameters['petId']!),
+        ),
+      ),
+      GoRoute(
+        path: '/growth/:petId',
+        redirect: (context, state) =>
+            int.tryParse(state.pathParameters['petId'] ?? '') == null
+                ? '/home'
+                : null,
+        builder: (context, state) => GrowthPage(
           petId: int.parse(state.pathParameters['petId']!),
         ),
       ),
