@@ -24,6 +24,8 @@ dependencies:
   # 网络（repository 接口占位使用）
   dio: ^5.9.0
   web_socket_channel: ^3.0.3
+  # Web 平台浏览器 API（token 本地联调 fallback）
+  web: ^1.1.1
 
 dev_dependencies:
   flutter_test:
@@ -42,3 +44,4 @@ flutter:
     - assets/config.json
     - assets/config.test.json
     - assets/config.prod.json
+

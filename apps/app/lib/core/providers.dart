@@ -29,7 +29,7 @@ final apiBaseUrlProvider = Provider<String>((ref) => AppConfig.apiBaseUrl);
 
 /// Token 安全存储。
 final tokenStorageProvider = Provider<TokenStorage>(
-  (ref) => SecureTokenStorage(),
+  (ref) => createTokenStorage(),
 );
 
 /// ApiClient：统一包裹解析 + token 注入 + 401 刷新。
@@ -103,8 +103,10 @@ final Provider<PetMemoryRepository> petMemoryRepositoryProvider =
 /// 记忆页状态机（按宠物 id 分实例）。
 final StateNotifierProviderFamily<MemoryController, MemoryState, int>
 memoryControllerProvider =
-    StateNotifierProvider.family<MemoryController, MemoryState, int>(
-        (ref, petId) {
+    StateNotifierProvider.family<MemoryController, MemoryState, int>((
+      ref,
+      petId,
+    ) {
       return MemoryController(
         ref.watch(petMemoryRepositoryProvider),
         petId: petId,
@@ -120,8 +122,10 @@ final Provider<PetGrowthRepository> petGrowthRepositoryProvider =
 /// 成长时间线状态机（按宠物 id 分实例）。
 final StateNotifierProviderFamily<GrowthController, GrowthState, int>
 growthControllerProvider =
-    StateNotifierProvider.family<GrowthController, GrowthState, int>(
-        (ref, petId) {
+    StateNotifierProvider.family<GrowthController, GrowthState, int>((
+      ref,
+      petId,
+    ) {
       return GrowthController(
         ref.watch(petGrowthRepositoryProvider),
         petId: petId,

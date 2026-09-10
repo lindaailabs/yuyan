@@ -8,6 +8,12 @@ See [docs/LLM_DEV_GUIDE.md](docs/LLM_DEV_GUIDE.md) for product boundaries, archi
 
 [中文文档](README-zh.md)
 
+## Screenshots
+
+| Adopt a pet | Chat | Growth log |
+|---|---|---|
+| ![Adopt a pet](docs/screenshots/adopt-pet.png) | ![Chat](docs/screenshots/chat.png) | ![Growth log](docs/screenshots/growth.png) |
+
 ## Phase 1 MVP
 
 Phase 1 goal: a user can sign up, create an AI pet, talk to it through text, see it remember meaningful facts, and watch its state and growth evolve. The foundation should also leave room for voice and subscription payments.

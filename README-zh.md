@@ -8,6 +8,12 @@ AI 宠物应用：一只有记忆、会成长、能对话的虚拟宠物。
 
 [English](README.md)
 
+## 界面截图
+
+| 领养宠物 | 对话 | 成长记录 |
+|---|---|---|
+| ![领养宠物](docs/screenshots/adopt-pet.png) | ![对话](docs/screenshots/chat.png) | ![成长记录](docs/screenshots/growth.png) |
+
 ## 一期 MVP
 
 一期目标：用户可以注册登录，创建自己的 AI 宠物，通过文本对话建立关系；宠物能记住关键信息，拥有可解释的状态和成长变化，并具备后续接入语音与订阅支付的技术地基。

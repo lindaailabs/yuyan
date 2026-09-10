@@ -132,7 +132,16 @@ func CORSMiddleware() gin.HandlerFunc {
 		c.Header("Access-Control-Allow-Origin", origin)
 		c.Header("Access-Control-Allow-Credentials", "true")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Content-Type, Accept, Authorization")
+		c.Header(
+			"Access-Control-Allow-Headers",
+			"Origin, Content-Type, Accept, Authorization, Access-Control-Request-Private-Network",
+		)
+		// Chrome 私有网络访问(PNA)：从内网页面(如 192.168.x.x)请求内网服务时，
+		// Chrome 会带 Access-Control-Request-Private-Network 预检，服务端须显式允许，
+		// 否则即使 Origin 匹配也会被拦（手机/同网段联调才会遇到，localhost 不触发）。
+		if c.GetHeader("Access-Control-Request-Private-Network") == "true" {
+			c.Header("Access-Control-Allow-Private-Network", "true")
+		}
 		if c.Request.Method == http.MethodOptions {
 			c.AbortWithStatus(http.StatusNoContent)
 			return
