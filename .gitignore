@@ -35,3 +35,18 @@ _backend_err.log
 _flutter_run.log
 _flutter_err.log
 _go_test.log
+
+# 本地打包中间产物与临时脚本（不入库）
+_apk_build.log
+_apk_build_err.log
+_build_apk.ps1
+_android_setup.ps1
+_login.json
+*.apk
+*.aab
+
+# 临时校验脚本与产物（不入库）
+.tmp-*
+
+# 品牌资源生成物（由 SVG 生成，不入库）
+/assets/branding/generated/
