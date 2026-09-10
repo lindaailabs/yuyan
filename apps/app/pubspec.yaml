@@ -12,6 +12,7 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.8
+  flutter_svg: ^2.2.3
 
   # 状态管理（guide §6.2：仅 Riverpod）
   flutter_riverpod: ^2.6.1
@@ -41,7 +42,9 @@ flutter:
   assets:
     - assets/user_avatars/
     - assets/pet_avatars/
+    - assets/branding/
     - assets/config.json
     - assets/config.test.json
     - assets/config.prod.json
+
 

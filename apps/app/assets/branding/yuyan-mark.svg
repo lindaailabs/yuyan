@@ -1,0 +1,43 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Yuyan AI pet app icon</title>
+  <desc id="desc">A warm AI pet mark combining a swallow-like companion, memory stars, and a conversation bubble.</desc>
+  <defs>
+    <linearGradient id="bg" x1="78" y1="52" x2="438" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7FE7D6"/>
+      <stop offset="0.48" stop-color="#93B8FF"/>
+      <stop offset="1" stop-color="#8F79FF"/>
+    </linearGradient>
+    <linearGradient id="face" x1="145" y1="147" x2="367" y2="381" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F4F7FF"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="162" y1="150" x2="350" y2="354" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2ECDBA"/>
+      <stop offset="1" stop-color="#6D64F5"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <path d="M121 330C97 288 98 232 126 188C152 147 196 123 256 123C316 123 360 147 386 188C414 232 415 288 391 330C362 382 307 407 256 407C205 407 150 382 121 330Z" fill="#EAFBFF" opacity="0.82"/>
+  <g>
+    <path d="M147 288C147 222 195 173 256 173C317 173 365 222 365 288C365 351 318 389 256 389C194 389 147 351 147 288Z" fill="url(#face)"/>
+    <path d="M171 217C167 175 183 143 218 119C230 154 229 184 207 211L171 217Z" fill="#F5FBFF"/>
+    <path d="M341 217C345 175 329 143 294 119C282 154 283 184 305 211L341 217Z" fill="#F5FBFF"/>
+    <path d="M168 293C128 298 103 317 87 350C127 363 166 354 190 324L168 293Z" fill="#F9FDFF"/>
+    <path d="M344 293C384 298 409 317 425 350C385 363 346 354 322 324L344 293Z" fill="#F9FDFF"/>
+  </g>
+  <path d="M186 242C202 219 226 207 256 207C286 207 310 219 326 242" stroke="url(#accent)" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="217" cy="278" r="16" fill="#23315C"/>
+  <circle cx="295" cy="278" r="16" fill="#23315C"/>
+  <circle cx="222" cy="272" r="5" fill="#FFFFFF"/>
+  <circle cx="300" cy="272" r="5" fill="#FFFFFF"/>
+  <path d="M228 329C245 343 267 343 284 329" stroke="#2B355F" stroke-width="13" stroke-linecap="round"/>
+  <path d="M256 301L244 316H268L256 301Z" fill="#FF9A9E"/>
+  <path d="M164 182C191 156 222 143 256 143C290 143 321 156 348 182" stroke="#2ECDBA" stroke-width="12" stroke-linecap="round" opacity="0.85"/>
+  <path d="M348 133L357 153L379 158L360 170L362 193L345 178L323 186L332 165L318 147L341 149L348 133Z" fill="#FFF4A8"/>
+  <path d="M134 130C143 130 150 137 150 146C150 155 143 162 134 162C125 162 118 155 118 146C118 137 125 130 134 130Z" fill="#FFFFFF" opacity="0.78"/>
+  <path d="M380 257C391 257 400 266 400 277C400 288 391 297 380 297C369 297 360 288 360 277C360 266 369 257 380 257Z" fill="#FFFFFF" opacity="0.72"/>
+  <path d="M176 112C184 112 190 118 190 126C190 134 184 140 176 140C168 140 162 134 162 126C162 118 168 112 176 112Z" fill="#23315C" opacity="0.14"/>
+</svg>
+
+
+

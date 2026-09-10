@@ -1,0 +1,41 @@
+<svg width="1040" height="320" viewBox="0 0 1040 320" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Yuyan logo</title>
+  <desc id="desc">Yuyan brand logo for an AI pet companion with memory, growth, and conversation.</desc>
+  <defs>
+    <linearGradient id="bg" x1="43" y1="33" x2="259" y2="286" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7FE7D6"/>
+      <stop offset="0.48" stop-color="#93B8FF"/>
+      <stop offset="1" stop-color="#8F79FF"/>
+    </linearGradient>
+    <linearGradient id="face" x1="83" y1="88" x2="217" y2="232" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#F4F7FF"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="95" y1="87" x2="207" y2="213" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2ECDBA"/>
+      <stop offset="1" stop-color="#6D64F5"/>
+    </linearGradient>
+  </defs>
+  <rect x="28" y="28" width="264" height="264" rx="74" fill="url(#bg)"/>
+  <path d="M75 206C60 179 61 145 78 117C94 92 122 77 160 77C198 77 226 92 242 117C259 145 260 179 245 206C227 239 193 254 160 254C127 254 93 239 75 206Z" fill="#EAFBFF" opacity="0.82"/>
+  <path d="M93 179C93 138 123 108 160 108C197 108 227 138 227 179C227 218 198 242 160 242C122 242 93 218 93 179Z" fill="url(#face)"/>
+  <path d="M108 135C106 108 116 88 137 73C145 95 144 113 130 131L108 135Z" fill="#F5FBFF"/>
+  <path d="M212 135C214 108 204 88 183 73C175 95 176 113 190 131L212 135Z" fill="#F5FBFF"/>
+  <path d="M105 183C80 186 64 198 54 219C79 227 103 221 118 202L105 183Z" fill="#F9FDFF"/>
+  <path d="M215 183C240 186 256 198 266 219C241 227 217 221 202 202L215 183Z" fill="#F9FDFF"/>
+  <path d="M117 151C127 137 142 129 160 129C178 129 193 137 203 151" stroke="url(#accent)" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="136" cy="173" r="10" fill="#23315C"/>
+  <circle cx="184" cy="173" r="10" fill="#23315C"/>
+  <circle cx="139" cy="169" r="3.5" fill="#FFFFFF"/>
+  <circle cx="187" cy="169" r="3.5" fill="#FFFFFF"/>
+  <path d="M143 204C153 213 167 213 177 204" stroke="#2B355F" stroke-width="8" stroke-linecap="round"/>
+  <path d="M160 187L152 197H168L160 187Z" fill="#FF9A9E"/>
+  <path d="M102 113C119 97 138 89 160 89C182 89 201 97 218 113" stroke="#2ECDBA" stroke-width="8" stroke-linecap="round" opacity="0.85"/>
+  <path d="M219 80L224 93L238 96L226 104L228 119L217 109L203 114L209 101L200 89L214 91L219 80Z" fill="#FFF4A8"/>
+  <circle cx="86" cy="82" r="10" fill="#FFFFFF" opacity="0.78"/>
+  <circle cx="239" cy="171" r="12" fill="#FFFFFF" opacity="0.72"/>
+  <text x="344" y="137" fill="#223056" font-family="Inter, PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="82" font-weight="800" letter-spacing="0">语燕 Yuyan</text>
+  <text x="349" y="202" fill="#697392" font-family="Inter, PingFang SC, Microsoft YaHei, Arial, sans-serif" font-size="28" font-weight="500" letter-spacing="0">有记忆、会成长、能对话的 AI 宠物</text>
+  <path d="M351 235H645" stroke="#8ADFD2" stroke-width="8" stroke-linecap="round"/>
+  <path d="M667 235H720" stroke="#8F79FF" stroke-width="8" stroke-linecap="round"/>
+</svg>

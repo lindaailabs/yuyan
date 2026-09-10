@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/l10n/zh.dart';
@@ -67,6 +68,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: SvgPicture.asset(
+                  'assets/branding/yuyan-mark.svg',
+                  width: 96,
+                  height: 96,
+                  semanticsLabel: '语燕 Logo',
+                ),
+              ),
+            ),
+            const SizedBox(height: 28),
             TextField(
               controller: _phoneCtrl,
               keyboardType: TextInputType.phone,

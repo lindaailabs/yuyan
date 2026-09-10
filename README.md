@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/branding/yuyan-logo.svg" alt="Yuyan logo" width="520">
+</p>
+
 # Yuyan
 
 An AI pet app: a virtual companion with memory, growth, and conversation.
@@ -167,3 +171,5 @@ flutter build apk --dart-define=API_BASE_URL=http://<server-address>:8080/api/v1
 | Server tests | `make test-server` | `powershell -File scripts/make.ps1 -Target test-server` |
 | Lint | `make lint` | `powershell -File scripts/make.ps1 -Target lint` |
 | Protocol schema checks | `make gen-protocol` | `powershell -File scripts/make.ps1 -Target gen-protocol` |
+
+
