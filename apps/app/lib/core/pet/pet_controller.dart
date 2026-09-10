@@ -58,6 +58,18 @@ class PetController extends StateNotifier<PetHomeState> {
     }
   }
 
+  /// 切换当前陪伴的宠物（多只宠物时由切换入口调用）。
+  /// 找不到对应 id 时保持原状，不产生状态抖动。
+  void selectPet(int petId) {
+    if (state.current?.id == petId) return;
+    for (final pet in state.pets) {
+      if (pet.id == petId) {
+        state = state.copyWith(current: pet);
+        return;
+      }
+    }
+  }
+
   Future<bool> create({
     required String name,
     int avatarId = 1,

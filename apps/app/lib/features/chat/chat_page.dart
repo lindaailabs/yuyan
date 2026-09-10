@@ -9,6 +9,7 @@ import '../../core/providers.dart';
 import '../../data/model/pet_memory.dart';
 import '../../data/model/pet_message.dart';
 import '../shared/avatar_widget.dart';
+import '../shared/pet_switcher.dart';
 
 /// 设计令牌（奶油白底 + 淡紫主色 + 暖橙点缀）。
 const _bg = Color(0xFFFFF9F5);
@@ -100,35 +101,47 @@ class _ChatPageState extends ConsumerState<ChatPage>
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        title: Row(
-          children: [
-            ScaleTransition(
-              scale: _breath,
-              child: PetAvatarWidget(avatarId: pet?.avatarId ?? 1, size: 40),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    petName,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: _ink,
-                    ),
-                  ),
-                  Text(
-                    pet == null
-                        ? Zh.chatGreeting
-                        : '${pet.mood} · Lv.${pet.level}',
-                    style: const TextStyle(fontSize: 12, color: _muted),
-                  ),
-                ],
+        title: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => showPetSwitcherSheet(
+            context,
+            ref,
+            onSelected: (id) {
+              // 切到别的宠物时跳转到它的会话（保留首页在栈底）。
+              if (id != widget.petId) context.replace('/chat/$id');
+            },
+          ),
+          child: Row(
+            children: [
+              ScaleTransition(
+                scale: _breath,
+                child: PetAvatarWidget(avatarId: pet?.avatarId ?? 1, size: 40),
               ),
-            ),
-          ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      petName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: _ink,
+                      ),
+                    ),
+                    Text(
+                      pet == null
+                          ? Zh.chatGreeting
+                          : '${pet.mood} · Lv.${pet.level}',
+                      style: const TextStyle(fontSize: 12, color: _muted),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.swap_horiz_rounded, size: 18, color: _muted),
+            ],
+          ),
         ),
         actions: [
           if (state.syncing)

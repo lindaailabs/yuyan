@@ -51,6 +51,10 @@ class Zh {
   static const String homePetMemoryComing = '记忆系统将在 W3 接入';
   static const String homePetGrowthComing = '成长事件将在 W4 接入';
 
+  // 宠物切换（多只宠物）
+  static const String petSwitch = '切换宠物';
+  static const String petSwitchTitle = '选择要陪伴的宠物';
+
   // 宠物创建
   static const String petCreateTitle = '领养宠物';
   static const String petNameHint = '给它起个名字';

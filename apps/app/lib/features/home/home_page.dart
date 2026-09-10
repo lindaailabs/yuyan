@@ -6,6 +6,7 @@ import '../../core/l10n/zh.dart';
 import '../../core/providers.dart';
 import '../../data/model/pet.dart';
 import '../shared/avatar_widget.dart';
+import '../shared/pet_switcher.dart';
 
 /// AI 宠物主页：一期主线从 IM 会话切到宠物陪伴闭环。
 class HomePage extends ConsumerWidget {
@@ -45,7 +46,10 @@ class HomePage extends ConsumerWidget {
             else
               _PetHomeView(
                 pet: state.current!,
+                pets: state.pets,
                 error: state.error,
+                onSelectPet: (id) =>
+                    ref.read(petControllerProvider.notifier).selectPet(id),
                 onCreate: () => context.push('/pet/create'),
                 onChat: () => context.push('/chat/${state.current!.id}'),
                 onMemory: () => context.push('/memories/${state.current!.id}'),
@@ -112,15 +116,21 @@ class _EmptyPetView extends StatelessWidget {
 class _PetHomeView extends StatelessWidget {
   const _PetHomeView({
     required this.pet,
+    required this.pets,
     required this.onCreate,
     required this.onChat,
     required this.onMemory,
     required this.onGrowth,
     required this.onSubscription,
+    required this.onSelectPet,
     this.error,
   });
 
   final PetProfile pet;
+
+  /// 已领养的全部宠物（>1 时展示切换条）。
+  final List<PetProfile> pets;
+  final ValueChanged<int> onSelectPet;
   final VoidCallback onCreate;
   final VoidCallback onChat;
   final VoidCallback onMemory;
@@ -155,6 +165,14 @@ class _PetHomeView extends StatelessWidget {
             ),
           ],
         ),
+        if (pets.length > 1) ...[
+          const SizedBox(height: 16),
+          PetSwitchBar(
+            pets: pets,
+            currentId: pet.id,
+            onSelect: onSelectPet,
+          ),
+        ],
         const SizedBox(height: 24),
         Wrap(
           spacing: 12,
