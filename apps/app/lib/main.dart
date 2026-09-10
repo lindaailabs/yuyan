@@ -27,6 +27,8 @@ class YuyanApp extends ConsumerWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       routerConfig: router,
+      // 去掉右上角 DEBUG 角标（仅影响 debug 模式下的展示）。
+      debugShowCheckedModeBanner: false,
     );
   }
 }
