@@ -49,6 +49,21 @@ AI 宠物应用：一只有记忆、会成长、能对话的虚拟宠物。
 > $env:PATH = "d:/workspace/yuyan/.tools/go/bin;" + $env:PATH
 > ````
 
+### 0. 一键启动（脚本，推荐）
+
+不想分别敲命令，可用脚本一次起后端 + 前端（自动用 `.tools` 便携 SDK，进程独立常驻）：
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/dev.ps1
+```
+
+- 后端：`go run ./cmd/server -env test` → `:8089`（含 dev-only CORS）
+- 前端：`flutter run -d web-server --web-port 8081` → 浏览器开 `http://localhost:8081`
+- 日志：`_backend_run.log` / `_flutter_run.log`；停止就结束 `go` / `flutter(dart)` 进程
+- 本机 `flutter run -d chrome` 拉不起浏览器时，web-server 模式最稳（手动开 URL 即可）
+
+> 前端固定 8081，避免每次随机端口；后端测试端口为 8089（避开 docker server 容器占用的 8080）。
+
 ### 1. 起存储（MySQL / Redis）
 
 compose 未配置 profile，请用服务名只起数据库，避免 server 容器占用 8080 与本地 `go run` 冲突：
@@ -94,15 +109,13 @@ flutter run -d chrome
 - `APP_ENV` 默认 `test`，所以 `flutter run` 自动加载 `config.test.json`，不用带任何参数。
 - 想临时覆盖某个地址：`flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8089/api/v1`。
 
-### 4. 登录
+### 4. 登录（手机号 + 密码）
 
-App 内点「发送验证码」→ 码存于 Redis，本地取出填入：
+已改为手机号 + 密码，注册与登录分离（不再有图形验证码）：
 
-```bash
-docker exec yuyan-redis-1 redis-cli get "sms:code:138xxxx"
-```
-
-> 本地联调后端开启了 dev-only CORS，Chrome 跨域调用正常；生产镜像不含 CORS（原生 app 也不受浏览器 CORS 限制）。
+- 首次使用先在 App 内走「注册」建号（`POST /api/v1/auth/register`，手机号 + 密码）；旧验证码账号无密码，需重新注册。
+- 登录（`POST /api/v1/auth/login`，手机号 + 密码）成功后返回双 token，自动跳主页。
+- 本地联调后端开启了 dev-only CORS，浏览器跨域调用正常；生产镜像不含 CORS（原生 app 也不受浏览器 CORS 限制）。
 
 ## 正式打包与部署
 
@@ -137,7 +150,7 @@ flutter build apk --dart-define=API_BASE_URL=http://<服务器地址>:8080/api/v
 ```
 
 - `APP_ENV` 默认 `test`；打包正式环境务必传 `--dart-define=APP_ENV=prod`，否则会打进 test 配置。
-- 模拟器：`http://10.0.2.2:8089/api/v1`（Android）/ `http://localhost:8089/api/v1`（iOS Simulator）。
+- 模拟器：`http://10.0.2.2:8080/api/v1`（Android）/ `http://localhost:8080/api/v1`（iOS Simulator）。
 - 真机同局域网调试：填开发机局域网 IP，如 `http://192.168.1.10:8080/api/v1`。
 - 原生 app 不受 CORS 限制；若发布 Web 版则需另配生产 CORS。
 

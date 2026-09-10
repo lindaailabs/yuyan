@@ -52,6 +52,11 @@ services:
       REDIS_ADDR: redis:6379
       LOG_LEVEL: info
       APP_ENV: dev
+      AI_PROVIDER: ${AI_PROVIDER:-mock}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-gpt-3.5-turbo}
+      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-8000}
     ports:
       - "8080:8080"
     depends_on:

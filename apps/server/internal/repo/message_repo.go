@@ -23,7 +23,7 @@ func NewMessageRepo(db *gorm.DB) *MessageRepo {
 	return &MessageRepo{db: db}
 }
 
-// Create 插入消息；uk_client_msg_id 冲突时返回 ErrDuplicateClientMsgID（不产生第二条）。
+// Create 插入消息；uk_user_client_msg_id 冲突时返回 ErrDuplicateClientMsgID（不产生第二条）。
 // 客户端未带 client_msg_id 时不参与幂等（MySQL 唯一键允许多个 NULL）。
 func (r *MessageRepo) Create(ctx context.Context, m *model.PetMessage) error {
 	if m.ClientMsgID == nil {
@@ -33,7 +33,7 @@ func (r *MessageRepo) Create(ctx context.Context, m *model.PetMessage) error {
 		return nil
 	}
 	res := r.db.WithContext(ctx).
-		Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "client_msg_id"}}, DoNothing: true}).
+		Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "user_id"}, {Name: "client_msg_id"}}, DoNothing: true}).
 		Create(m)
 	if res.Error != nil {
 		return fmt.Errorf("insert message: %w", res.Error)
@@ -44,11 +44,11 @@ func (r *MessageRepo) Create(ctx context.Context, m *model.PetMessage) error {
 	return nil
 }
 
-// FindByClientMsgID 按 client_msg_id 查找用户消息（幂等重放时取首次结果）。
-func (r *MessageRepo) FindByClientMsgID(ctx context.Context, clientMsgID string) (*model.PetMessage, error) {
+// FindByClientMsgID 按当前用户与会话查找 client_msg_id（幂等重放时取首次结果）。
+func (r *MessageRepo) FindByClientMsgID(ctx context.Context, uid, convID int64, clientMsgID string) (*model.PetMessage, error) {
 	var m model.PetMessage
 	if err := r.db.WithContext(ctx).
-		Where("client_msg_id = ? AND role = ?", clientMsgID, model.MessageRoleUser).
+		Where("user_id = ? AND conv_id = ? AND client_msg_id = ? AND role = ?", uid, convID, clientMsgID, model.MessageRoleUser).
 		Order("id ASC").First(&m).Error; err != nil {
 		return nil, err
 	}

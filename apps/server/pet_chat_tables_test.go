@@ -98,8 +98,8 @@ func TestPetChatTablesStructure(t *testing.T) {
 		"error_code":    "int",
 		"created_at":    "bigint",
 	})
-	if !hasIndex(t, db, "pet_messages", "uk_client_msg_id") {
-		t.Error("pet_messages 缺少唯一键 uk_client_msg_id（幂等依赖）")
+	if !hasIndex(t, db, "pet_messages", "uk_user_client_msg_id") {
+		t.Error("pet_messages 缺少唯一键 uk_user_client_msg_id（用户维度幂等依赖）")
 	}
 	if !hasIndex(t, db, "pet_messages", "idx_conv_id_id") {
 		t.Error("pet_messages 缺少索引 idx_conv_id_id（游标分页依赖）")
@@ -122,21 +122,26 @@ func TestPetChatTablesStructure(t *testing.T) {
 		"created_at":     "bigint",
 	})
 
-	// 幂等兜底：同一 client_msg_id 二次插入必须失败（唯一键生效）。
-	if _, err := db.Exec("INSERT INTO users (phone) VALUES ('13800138888')"); err != nil {
+	// 幂等兜底：同一用户的 client_msg_id 二次插入必须失败；不同用户可复用同一 UUID。
+	if _, err := db.Exec("INSERT INTO users (phone) VALUES ('13800138888'), ('13800139999')"); err != nil {
 		t.Fatalf("插入用户失败: %v", err)
 	}
-	if _, err := db.Exec("INSERT INTO pets (user_id, name) VALUES (1, '小燕')"); err != nil {
+	if _, err := db.Exec("INSERT INTO pets (user_id, name) VALUES (1, '小燕'), (2, '小羽')"); err != nil {
 		t.Fatalf("插入宠物失败: %v", err)
 	}
-	if _, err := db.Exec("INSERT INTO pet_conversations (user_id, pet_id) VALUES (1, 1)"); err != nil {
+	if _, err := db.Exec("INSERT INTO pet_conversations (user_id, pet_id) VALUES (1, 1), (2, 2)"); err != nil {
 		t.Fatalf("插入会话失败: %v", err)
 	}
-	const insertMsg = "INSERT INTO pet_messages (conv_id, user_id, pet_id, role, content, client_msg_id, created_at) VALUES (1, 1, 1, 'user', '你好', '11111111-2222-3333-4444-555555555555', 1788900000)"
-	if _, err := db.Exec(insertMsg); err != nil {
+	const clientMsgID = "11111111-2222-3333-4444-555555555555"
+	const insertMsgUser1 = "INSERT INTO pet_messages (conv_id, user_id, pet_id, role, content, client_msg_id, created_at) VALUES (1, 1, 1, 'user', '你好', '" + clientMsgID + "', 1788900000)"
+	const insertMsgUser2 = "INSERT INTO pet_messages (conv_id, user_id, pet_id, role, content, client_msg_id, created_at) VALUES (2, 2, 2, 'user', '你好', '" + clientMsgID + "', 1788900000)"
+	if _, err := db.Exec(insertMsgUser1); err != nil {
 		t.Fatalf("首次插入消息失败: %v", err)
 	}
-	if _, err := db.Exec(insertMsg); err == nil {
-		t.Error("相同 client_msg_id 重复插入应当失败（uk_client_msg_id 未生效）")
+	if _, err := db.Exec(insertMsgUser1); err == nil {
+		t.Error("同一用户相同 client_msg_id 重复插入应当失败（uk_user_client_msg_id 未生效）")
+	}
+	if _, err := db.Exec(insertMsgUser2); err != nil {
+		t.Fatalf("不同用户复用 client_msg_id 应当成功: %v", err)
 	}
 }

@@ -19,34 +19,30 @@ class ContactsPage extends ConsumerWidget {
       body: state.loading
           ? const Center(child: CircularProgressIndicator())
           : state.error != null && state.friends.isEmpty
-              ? _ErrorView(
-                  message: state.error!,
-                  onRetry: () =>
-                      ref.read(contactsControllerProvider.notifier).loadAll(),
-                )
-              : state.friends.isEmpty
-                  ? _EmptyView(
-                      onGoAdd: () => context.go('/search'),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: () => ref
-                          .read(contactsControllerProvider.notifier)
-                          .loadAll(),
-                      child: ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        itemCount: state.friends.length,
-                        separatorBuilder: (_, _) => const Divider(height: 1),
-                        itemBuilder: (context, index) {
-                          final friend = state.friends[index];
-                          return ListTile(
-                            leading: AvatarWidget(avatarId: friend.user.avatarId),
-                            title:
-                                Text(friend.user.nickname ?? friend.user.phone),
-                            subtitle: Text(friend.user.phone),
-                          );
-                        },
-                      ),
-                    ),
+          ? _ErrorView(
+              message: state.error!,
+              onRetry: () =>
+                  ref.read(contactsControllerProvider.notifier).loadAll(),
+            )
+          : state.friends.isEmpty
+          ? _EmptyView(onGoAdd: () => context.go('/search'))
+          : RefreshIndicator(
+              onRefresh: () =>
+                  ref.read(contactsControllerProvider.notifier).loadAll(),
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                itemCount: state.friends.length,
+                separatorBuilder: (_, _) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final friend = state.friends[index];
+                  return ListTile(
+                    leading: UserAvatarWidget(avatarId: friend.user.avatarId),
+                    title: Text(friend.user.nickname ?? friend.user.phone),
+                    subtitle: Text(friend.user.phone),
+                  );
+                },
+              ),
+            ),
     );
   }
 }
@@ -65,15 +61,9 @@ class _EmptyView extends StatelessWidget {
         children: [
           const Icon(Icons.people_outline, size: 72, color: Colors.grey),
           const SizedBox(height: 16),
-          Text(
-            Zh.contactsEmpty,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          Text(Zh.contactsEmpty, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 24),
-          FilledButton.tonal(
-            onPressed: onGoAdd,
-            child: Text(Zh.contactsGoAdd),
-          ),
+          FilledButton.tonal(onPressed: onGoAdd, child: Text(Zh.contactsGoAdd)),
         ],
       ),
     );
@@ -95,10 +85,7 @@ class _ErrorView extends StatelessWidget {
         children: [
           Text(message, textAlign: TextAlign.center),
           const SizedBox(height: 16),
-          OutlinedButton(
-            onPressed: onRetry,
-            child: Text(Zh.retry),
-          ),
+          OutlinedButton(onPressed: onRetry, child: Text(Zh.retry)),
         ],
       ),
     );

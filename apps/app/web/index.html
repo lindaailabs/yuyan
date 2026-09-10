@@ -18,18 +18,18 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="语燕：有记忆、会成长、能对话的 AI 宠物。">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="yuyan_app">
+  <meta name="apple-mobile-web-app-title" content="语燕">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>yuyan_app</title>
+  <title>语燕 Yuyan</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -41,8 +41,22 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
-  <!-- drift web 后端（sql.js）需要全局 initSqlJs，见 lib/data/local/connection/connection_web.dart -->
-  <script src="https://cdn.jsdelivr.net/npm/sql.js@1.8.0/dist/sql-wasm.js"></script>
+  <!-- drift web 后端（sql.js）：文件已本地化到 web/sql-js/，并包一层 initSqlJs 固定 locateFile，
+       避免默认按页面路径找 sql-wasm.wasm 返回 404 HTML（报 expected magic word ... found <html>）。
+       见 lib/data/local/connection/connection_web.dart -->
+  <script src="sql-js/sql-wasm.js"></script>
+  <script>
+    (function () {
+      var raw = window.initSqlJs;
+      window.initSqlJs = function (config) {
+        config = config || {};
+        if (!config.locateFile) {
+          config.locateFile = function (file) { return 'sql-js/' + file; };
+        }
+        return raw(config);
+      };
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

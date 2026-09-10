@@ -123,7 +123,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
     final sending = _sendingId == item.id;
     return Card(
       child: ListTile(
-        leading: AvatarWidget(avatarId: item.avatarId),
+        leading: UserAvatarWidget(avatarId: item.avatarId),
         title: Text(item.nickname ?? item.phone),
         subtitle: Text(item.phone),
         trailing: FilledButton.tonal(

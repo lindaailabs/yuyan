@@ -9,7 +9,7 @@
 # 实现说明：
 # - 用 .NET HttpClient 而非 Invoke-RestMethod：后者在 Windows PowerShell 5.1 下不按
 #   UTF-8 收发，中文昵称会被写成 '?'。
-# - 验证码不落地短信，脚本从容器 Redis 读取（sms:code:{phone}）后完成登录。
+# - 使用手机号+密码注册/登录，并写入昵称验证 utf8mb4 往返。
 # - 每次运行使用随机号段，便于重复执行。
 # - 本文件须以 UTF-8 with BOM 保存：PS5.1 按 GBK 读取无 BOM 的 UTF-8，中文会吞掉紧邻引号。
 
@@ -31,7 +31,7 @@ function Invoke-Api {
         [System.Net.Http.HttpMethod]::new($Method.ToUpper()), "$base$Path")
     if ($Token) { $req.Headers.Add("Authorization", "Bearer $Token") }
     if ($Body) {
-        $json = $Body | ConvertTo-Json -Compress
+        $json = $Body | ConvertTo-Json -Compress -Depth 8
         $req.Content = [System.Net.Http.StringContent]::new(
             $json, [System.Text.Encoding]::UTF8, "application/json")
     }
@@ -64,16 +64,20 @@ function Check-True {
 
 function Login-User {
     param([string]$Phone, [string]$Nickname)
-    $null = Invoke-Api -Method "POST" -Path "/auth/sms-code" -Body @{ phone = $Phone }
-    $code = (& docker exec yuyan-redis-1 redis-cli get "sms:code:$Phone" | Out-String).Trim()
-    $login = Invoke-Api -Method "POST" -Path "/auth/login" -Body @{ phone = $Phone; code = $code }
-    if ($login.code -ne 0) { throw "login failed for $Phone : $($login.msg)" }
-    $token = $login.data.access_token
-    $upd = Invoke-Api -Method "PUT" -Path "/users/me" `
-        -Body @{ nickname = $Nickname; avatar_id = 1 } -Token $token
-    Check-True "设置昵称 $Nickname" ($upd.code -eq 0) "code=$($upd.code)"
-    $me = Invoke-Api -Method "GET" -Path "/users/me" -Token $token
-    return @{ token = $token; id = [int64]$me.data.id; phone = $Phone }
+    $password = "secret123"
+    $register = Invoke-Api -Method "POST" -Path "/auth/register" -Body @{ phone = $Phone; password = $password }
+    if ($register.code -eq 0) {
+        $token = $register.data.access_token
+    } elseif ($register.code -eq 2004) {
+        $login = Invoke-Api -Method "POST" -Path "/auth/login" -Body @{ phone = $Phone; password = $password }
+        if ($login.code -ne 0) { throw "login failed for $Phone : $($login.msg)" }
+        $token = $login.data.access_token
+    } else {
+        throw "register failed for $Phone : $($register.msg)"
+    }
+    $profile = Invoke-Api -Method "PUT" -Path "/users/me" -Body @{ nickname = $Nickname; avatar_id = 1 } -Token $token
+    if ($profile.code -ne 0) { throw "profile failed for $Phone : $($profile.msg)" }
+    return @{ token = $token; id = [int64]$profile.data.id }
 }
 
 # 每次运行取随机号段，避免与历史数据/限频冲突。

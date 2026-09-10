@@ -30,25 +30,28 @@ class RequestsPage extends ConsumerWidget {
       body: state.loading
           ? const Center(child: CircularProgressIndicator())
           : state.requests.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.mark_email_unread_outlined,
-                          size: 72, color: Colors.grey),
-                      const SizedBox(height: 16),
-                      Text(Zh.requestsEmpty),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.mark_email_unread_outlined,
+                    size: 72,
+                    color: Colors.grey,
                   ),
-                )
-              : ListView.separated(
-                  itemCount: state.requests.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final request = state.requests[index];
-                    return _RequestCard(request: request);
-                  },
-                ),
+                  const SizedBox(height: 16),
+                  Text(Zh.requestsEmpty),
+                ],
+              ),
+            )
+          : ListView.separated(
+              itemCount: state.requests.length,
+              separatorBuilder: (_, _) => const Divider(height: 1),
+              itemBuilder: (context, index) {
+                final request = state.requests[index];
+                return _RequestCard(request: request);
+              },
+            ),
     );
   }
 }
@@ -70,7 +73,7 @@ class _RequestCard extends ConsumerWidget {
         padding: const EdgeInsets.all(12),
         child: Row(
           children: [
-            AvatarWidget(avatarId: request.fromUser.avatarId),
+            UserAvatarWidget(avatarId: request.fromUser.avatarId),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -95,8 +98,8 @@ class _RequestCard extends ConsumerWidget {
               onPressed: busy
                   ? null
                   : () => ref
-                      .read(contactsControllerProvider.notifier)
-                      .accept(request.id),
+                        .read(contactsControllerProvider.notifier)
+                        .accept(request.id),
               child: busy
                   ? const SizedBox(
                       width: 16,
@@ -110,8 +113,8 @@ class _RequestCard extends ConsumerWidget {
               onPressed: busy
                   ? null
                   : () => ref
-                      .read(contactsControllerProvider.notifier)
-                      .reject(request.id),
+                        .read(contactsControllerProvider.notifier)
+                        .reject(request.id),
               child: Text(Zh.requestsReject),
             ),
           ],

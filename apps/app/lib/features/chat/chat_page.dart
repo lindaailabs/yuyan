@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/auth/auth_state.dart';
 import '../../core/chat/chat_controller.dart';
 import '../../core/l10n/zh.dart';
 import '../../core/providers.dart';
@@ -42,9 +43,10 @@ class _ChatPageState extends ConsumerState<ChatPage>
       vsync: this,
       duration: const Duration(milliseconds: 2200),
     )..repeat(reverse: true);
-    _breath = Tween<double>(begin: 0.97, end: 1.05).animate(
-      CurvedAnimation(parent: _breathCtrl, curve: Curves.easeInOut),
-    );
+    _breath = Tween<double>(
+      begin: 0.97,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _breathCtrl, curve: Curves.easeInOut));
     _inputCtrl.addListener(() => setState(() {}));
   }
 
@@ -84,6 +86,10 @@ class _ChatPageState extends ConsumerState<ChatPage>
     final petState = ref.watch(petControllerProvider);
     final pet = petState.current;
     final petName = pet != null && pet.id == widget.petId ? pet.name : '宠物';
+    final authState = ref.watch(authControllerProvider);
+    final userAvatarId =
+        authState is AuthReady ? authState.profile.avatarId : 1;
+    final petAvatarId = pet?.avatarId ?? 1;
 
     return Scaffold(
       backgroundColor: _bg,
@@ -98,10 +104,7 @@ class _ChatPageState extends ConsumerState<ChatPage>
           children: [
             ScaleTransition(
               scale: _breath,
-              child: AvatarWidget(
-                avatarId: pet?.avatarId ?? 1,
-                size: 40,
-              ),
+              child: PetAvatarWidget(avatarId: pet?.avatarId ?? 1, size: 40),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -117,7 +120,9 @@ class _ChatPageState extends ConsumerState<ChatPage>
                     ),
                   ),
                   Text(
-                    pet == null ? Zh.chatGreeting : '${pet.mood} · Lv.${pet.level}',
+                    pet == null
+                        ? Zh.chatGreeting
+                        : '${pet.mood} · Lv.${pet.level}',
                     style: const TextStyle(fontSize: 12, color: _muted),
                   ),
                 ],
@@ -144,7 +149,14 @@ class _ChatPageState extends ConsumerState<ChatPage>
             _QuotaBanner(onUpgrade: () => context.push('/subscription')),
           if (state.newMemories.isNotEmpty)
             _MemoryBanner(memories: state.newMemories),
-          Expanded(child: _buildBody(state, petName)),
+          Expanded(
+            child: _buildBody(
+              state,
+              petName,
+              petAvatarId: petAvatarId,
+              userAvatarId: userAvatarId,
+            ),
+          ),
           _InputBar(
             controller: _inputCtrl,
             sending: state.sending,
@@ -155,7 +167,12 @@ class _ChatPageState extends ConsumerState<ChatPage>
     );
   }
 
-  Widget _buildBody(ChatState state, String petName) {
+  Widget _buildBody(
+    ChatState state,
+    String petName, {
+    required int petAvatarId,
+    required int userAvatarId,
+  }) {
     if (state.loading && state.messages.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -185,8 +202,8 @@ class _ChatPageState extends ConsumerState<ChatPage>
                 onPressed: state.syncing
                     ? null
                     : () => ref
-                        .read(chatControllerProvider(widget.petId).notifier)
-                        .sync(),
+                          .read(chatControllerProvider(widget.petId).notifier)
+                          .sync(),
                 child: const Text(Zh.chatLoadMore),
               ),
             ),
@@ -198,6 +215,8 @@ class _ChatPageState extends ConsumerState<ChatPage>
           onRetry: () => ref
               .read(chatControllerProvider(widget.petId).notifier)
               .retry(message.clientMsgId ?? ''),
+          petAvatarId: petAvatarId,
+          userAvatarId: userAvatarId,
         );
       },
     );
@@ -359,11 +378,7 @@ class _EmptyView extends StatelessWidget {
             Wrap(
               spacing: 10,
               children: [
-                for (final chip in [
-                  Zh.chatChip1,
-                  Zh.chatChip2,
-                  Zh.chatChip3,
-                ])
+                for (final chip in [Zh.chatChip1, Zh.chatChip2, Zh.chatChip3])
                   ActionChip(
                     label: Text(chip),
                     backgroundColor: Colors.white,
@@ -380,10 +395,21 @@ class _EmptyView extends StatelessWidget {
 }
 
 class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message, required this.onRetry});
+  const _MessageBubble({
+    required this.message,
+    required this.onRetry,
+    required this.petAvatarId,
+    required this.userAvatarId,
+  });
 
   final PetMessage message;
   final VoidCallback onRetry;
+
+  /// 宠物侧头像（1~12）；取不到宠物时兜底 1。
+  final int petAvatarId;
+
+  /// 用户侧头像（1~8）；未登录或资料未就绪时兜底 1。
+  final int userAvatarId;
 
   @override
   Widget build(BuildContext context) {
@@ -391,88 +417,109 @@ class _MessageBubble extends StatelessWidget {
     final failed = message.isFailed;
     final sending = message.sendState == PetSendState.sending;
 
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6),
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.76,
-        ),
-        child: Column(
-          crossAxisAlignment:
-              isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            AnimatedOpacity(
-              opacity: sending ? 0.6 : 1,
-              duration: const Duration(milliseconds: 180),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: isUser
-                      ? const LinearGradient(colors: [_primary, _primarySoft])
-                      : null,
-                  color: isUser ? null : Colors.white,
-                  border: isUser
-                      ? null
-                      : Border.all(
-                          color: failed ? _danger : const Color(0xFFEDE6FF),
+    // 用户消息头像在右，宠物消息头像在左。
+    final Widget avatar = isUser
+        ? UserAvatarWidget(avatarId: userAvatarId, size: 36)
+        : PetAvatarWidget(avatarId: petAvatarId, size: 36);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!isUser) avatar,
+          if (!isUser) const SizedBox(width: 8),
+          Flexible(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.72,
+              ),
+              child: Column(
+                crossAxisAlignment:
+                    isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                children: [
+                  AnimatedOpacity(
+                    opacity: sending ? 0.6 : 1,
+                    duration: const Duration(milliseconds: 180),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: isUser
+                            ? const LinearGradient(
+                                colors: [_primary, _primarySoft],
+                              )
+                            : null,
+                        color: isUser ? null : Colors.white,
+                        border: isUser
+                            ? null
+                            : Border.all(
+                                color:
+                                    failed ? _danger : const Color(0xFFEDE6FF),
+                              ),
+                        borderRadius: BorderRadius.circular(20).copyWith(
+                          bottomRight:
+                              isUser ? const Radius.circular(6) : null,
+                          bottomLeft: isUser ? null : const Radius.circular(6),
                         ),
-                  borderRadius: BorderRadius.circular(20).copyWith(
-                    bottomRight: isUser ? const Radius.circular(6) : null,
-                    bottomLeft: isUser ? null : const Radius.circular(6),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Text(
+                          message.content,
+                          style: TextStyle(
+                            fontSize: 14,
+                            height: 1.4,
+                            color: isUser ? Colors.white : _ink,
+                          ),
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
                   ),
-                  child: Text(
-                    message.content,
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.4,
-                      color: isUser ? Colors.white : _ink,
+                  if (sending)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 4, right: 4),
+                      child: SizedBox(
+                        width: 10,
+                        height: 10,
+                        child: CircularProgressIndicator(strokeWidth: 1.5),
+                      ),
                     ),
-                  ),
-                ),
+                  if (failed)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: GestureDetector(
+                        onTap: onRetry,
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.refresh, size: 13, color: _danger),
+                            SizedBox(width: 4),
+                            Text(
+                              Zh.chatFailedHint,
+                              style: TextStyle(fontSize: 11, color: _danger),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-            if (sending)
-              const Padding(
-                padding: EdgeInsets.only(top: 4, right: 4),
-                child: SizedBox(
-                  width: 10,
-                  height: 10,
-                  child: CircularProgressIndicator(strokeWidth: 1.5),
-                ),
-              ),
-            if (failed)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: GestureDetector(
-                  onTap: onRetry,
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.refresh, size: 13, color: _danger),
-                      SizedBox(width: 4),
-                      Text(
-                        Zh.chatFailedHint,
-                        style: TextStyle(fontSize: 11, color: _danger),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
+          ),
+          if (isUser) const SizedBox(width: 8),
+          if (isUser) avatar,
+        ],
       ),
     );
   }

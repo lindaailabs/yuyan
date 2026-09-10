@@ -3,7 +3,7 @@
 # 本地调试接真实模型：把 ai_provider 设为 openai，并填下面三项。
 # 模型 key 本地可直接内联明文（文件不提交）；若不想落盘，保持 ai_api_key: "${AI_API_KEY}" 并在启动前 export。
 app_env: "test"
-http_port: "8080"
+http_port: "8089"
 log_level: "debug"
 mysql_dsn: "root:yuyan123@tcp(127.0.0.1:3306)/yuyan?charset=utf8mb4&parseTime=True&loc=Local"
 redis_addr: "127.0.0.1:6379"

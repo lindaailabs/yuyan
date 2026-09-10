@@ -17,8 +17,8 @@ var (
 	ErrUserNotFound    = errcode.New(2013, "用户不存在")
 )
 
-// 预置头像数量（apps/app assets avatar_1..8）。
-const maxAvatarID = 8
+// 用户预置头像数量（apps/app assets user_avatar_1..8）。
+const maxUserAvatarID = 8
 
 // UserService 用户资料业务逻辑（api → service → repo 分层，事务仅发生在本层）。
 type UserService struct {
@@ -53,7 +53,7 @@ func (s *UserService) UpdateProfile(ctx context.Context, uid int64, in *model.Up
 			return nil, ErrNicknameInvalid
 		}
 	}
-	if in.AvatarID != nil && (*in.AvatarID < 1 || *in.AvatarID > maxAvatarID) {
+	if in.AvatarID != nil && (*in.AvatarID < 1 || *in.AvatarID > maxUserAvatarID) {
 		return nil, ErrAvatarInvalid
 	}
 

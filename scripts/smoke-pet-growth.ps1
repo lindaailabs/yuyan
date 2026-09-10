@@ -24,7 +24,7 @@ function Invoke-Api {
         [System.Net.Http.HttpMethod]::new($Method.ToUpper()), "$base$Path")
     if ($Token) { $req.Headers.Add("Authorization", "Bearer $Token") }
     if ($Body) {
-        $json = $Body | ConvertTo-Json -Compress
+        $json = $Body | ConvertTo-Json -Compress -Depth 8
         $req.Content = [System.Net.Http.StringContent]::new(
             $json, [System.Text.Encoding]::UTF8, "application/json")
     }
@@ -57,11 +57,15 @@ function Check-True {
 
 function Login-User {
     param([string]$Phone)
-    $null = Invoke-Api -Method "POST" -Path "/auth/sms-code" -Body @{ phone = $Phone }
-    $code = (& docker exec yuyan-redis-1 redis-cli get "sms:code:$Phone" | Out-String).Trim()
-    $login = Invoke-Api -Method "POST" -Path "/auth/login" -Body @{ phone = $Phone; code = $code }
-    if ($login.code -ne 0) { throw "login failed for $Phone : $($login.msg)" }
-    return $login.data.access_token
+    $password = "secret123"
+    $register = Invoke-Api -Method "POST" -Path "/auth/register" -Body @{ phone = $Phone; password = $password }
+    if ($register.code -eq 0) { return $register.data.access_token }
+    if ($register.code -eq 2004) {
+        $login = Invoke-Api -Method "POST" -Path "/auth/login" -Body @{ phone = $Phone; password = $password }
+        if ($login.code -ne 0) { throw "login failed for $Phone : $($login.msg)" }
+        return $login.data.access_token
+    }
+    throw "register failed for $Phone : $($register.msg)"
 }
 
 $seed = Get-Random -Minimum 10000000 -Maximum 99999980
@@ -72,7 +76,7 @@ Write-Output "=== 0. 健康检查 ==="
 $healthResp = $script:http.GetStringAsync("http://127.0.0.1:8080/healthz").GetAwaiter().GetResult()
 Check-True "/healthz ok" ($healthResp -like '*"code":0*') $healthResp
 
-Write-Output "=== 1. 登录与建宠 ==="
+Write-Output "=== 1. 注册登录与建宠 ==="
 $token = Login-User -Phone $phone
 $otherToken = Login-User -Phone $otherPhone
 $pet = Invoke-Api -Method "POST" -Path "/pets" -Body @{ name = "语燕"; avatar_id = 1 } -Token $token

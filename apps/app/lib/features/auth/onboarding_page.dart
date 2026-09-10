@@ -62,8 +62,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(Zh.onboardingPickAvatar,
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              Zh.onboardingPickAvatar,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 12),
             GridView.count(
               crossAxisCount: 4,
@@ -72,7 +74,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
               children: [
-                for (final id in List.generate(8, (i) => i + 1))
+                for (final id in List.generate(
+                  UserAvatarWidget.count,
+                  (i) => i + 1,
+                ))
                   _avatarTile(id),
               ],
             ),
@@ -111,11 +116,13 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: selected ? Theme.of(context).colorScheme.primary : Colors.transparent,
+            color: selected
+                ? Theme.of(context).colorScheme.primary
+                : Colors.transparent,
             width: 3,
           ),
         ),
-        child: AvatarWidget(avatarId: id),
+        child: UserAvatarWidget(avatarId: id),
       ),
     );
   }

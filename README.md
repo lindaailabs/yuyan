@@ -49,6 +49,21 @@ Goal: run storage + backend + Flutter (Chrome) locally to walk the whole flow.
 > $env:PATH = "d:/workspace/yuyan/.tools/go/bin;" + $env:PATH
 > ````
 
+### 0. One-click startup (script, recommended)
+
+To avoid running commands separately, use the script to start backend + frontend at once (uses the portable SDK in `.tools`, processes run independently):
+
+```bash
+powershell -ExecutionPolicy Bypass -File scripts/dev.ps1
+```
+
+- Backend: `go run ./cmd/server -env test` → `:8089` (with dev-only CORS)
+- Frontend: `flutter run -d web-server --web-port 8081` → open `http://localhost:8081` in the browser
+- Logs: `_backend_run.log` / `_flutter_run.log`; stop by ending the `go` / `flutter(dart)` processes
+- If `flutter run -d chrome` cannot launch the browser on your machine, web-server mode is the most reliable (just open the URL manually)
+
+> Frontend is fixed on 8081 to avoid a random port each time; the backend test port is 8089 (avoiding the 8080 used by the docker server container).
+
 ### 1. Start storage (MySQL / Redis)
 
 The compose file has no profiles, so name the services explicitly to avoid the `server` container occupying port 8080:
@@ -93,15 +108,13 @@ flutter run -d chrome
 - `APP_ENV` defaults to `test`, so `flutter run` automatically loads `config.test.json` with no flags.
 - Temporary override: `flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8089/api/v1`.
 
-### 4. Login
+### 4. Login (phone + password)
 
-In the app, tap "Send code" → the code is stored in Redis; fetch it locally:
+Login now uses phone + password, with registration split out (no more graphic captcha):
 
-```bash
-docker exec yuyan-redis-1 redis-cli get "sms:code:138xxxx"
-```
-
-> Local debugging enables dev-only CORS so Chrome cross-origin calls work; the production image has no CORS (native apps are not subject to browser CORS either).
+- First time: register in the app (`POST /api/v1/auth/register`, phone + password) to create an account; old captcha-era accounts have no password and must re-register.
+- Login (`POST /api/v1/auth/login`, phone + password) returns a pair of tokens and jumps to the home page.
+- Local debugging enables dev-only CORS so browser cross-origin calls work; the production image has no CORS (native apps are not subject to browser CORS either).
 
 ## Production Build & Deploy
 
@@ -136,7 +149,7 @@ flutter build apk --dart-define=API_BASE_URL=http://<server-address>:8080/api/v1
 ```
 
 - `APP_ENV` defaults to `test`; always pass `--dart-define=APP_ENV=prod` for production builds, otherwise the test config gets bundled.
-- Emulator default: `http://10.0.2.2:8089/api/v1` (Android) / `http://localhost:8089/api/v1` (iOS Simulator).
+- Emulator default: `http://10.0.2.2:8080/api/v1` (Android) / `http://localhost:8080/api/v1` (iOS Simulator).
 - Real device on the same LAN: use the dev machine's LAN IP, e.g. `http://192.168.1.10:8080/api/v1`.
 - Native apps are not bound by CORS; a web release would need production CORS configured separately.
 

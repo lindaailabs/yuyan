@@ -151,3 +151,42 @@ func TestHandlerSendMessageIdempotent(t *testing.T) {
 		t.Errorf("重放应返回相同结果:\n%s\n%s", first.Data, second.Data)
 	}
 }
+
+func TestHandlerSendMessageIdempotencyScopedByUser(t *testing.T) {
+	e, aToken, bToken, aPetID := newPetChatEnv(t)
+
+	_, bPetResp := doJSON(t, e.r, http.MethodPost, "/api/v1/pets", bToken, map[string]any{"name": "小羽"})
+	if bPetResp.Code != 0 {
+		t.Fatalf("create b pet: code=%d msg=%s", bPetResp.Code, bPetResp.Msg)
+	}
+	var bPet model.PetProfile
+	if err := json.Unmarshal(bPetResp.Data, &bPet); err != nil {
+		t.Fatalf("unmarshal b pet: %v", err)
+	}
+
+	clientMsgID := "33333333-3333-3333-3333-333333333333"
+	_, first := doJSON(t, e.r, http.MethodPost, "/api/v1/pet-messages", aToken, map[string]any{
+		"pet_id":        aPetID,
+		"content":       "A 的消息",
+		"client_msg_id": clientMsgID,
+	})
+	if first.Code != 0 {
+		t.Fatalf("a send: code=%d msg=%s", first.Code, first.Msg)
+	}
+
+	_, second := doJSON(t, e.r, http.MethodPost, "/api/v1/pet-messages", bToken, map[string]any{
+		"pet_id":        bPet.ID,
+		"content":       "B 的消息",
+		"client_msg_id": clientMsgID,
+	})
+	if second.Code != 0 {
+		t.Fatalf("b send with same client_msg_id: code=%d msg=%s", second.Code, second.Msg)
+	}
+	var sent model.SendMessageResult
+	if err := json.Unmarshal(second.Data, &sent); err != nil {
+		t.Fatalf("unmarshal b send: %v", err)
+	}
+	if sent.UserMessage.Content != "B 的消息" {
+		t.Fatalf("cross-user idempotency leaked/replayed wrong message: %+v", sent.UserMessage)
+	}
+}

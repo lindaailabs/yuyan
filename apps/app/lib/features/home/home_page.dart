@@ -136,7 +136,7 @@ class _PetHomeView extends StatelessWidget {
       children: [
         Row(
           children: [
-            AvatarWidget(avatarId: pet.avatarId, size: 88),
+            PetAvatarWidget(avatarId: pet.avatarId, size: 88),
             const SizedBox(width: 16),
             Expanded(
               child: Column(

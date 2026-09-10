@@ -31,5 +31,7 @@ apps/app/build/
 
 # 本地运行日志（后端/Flutter/Go 测试产物，不入库）
 _backend_run.log
+_backend_err.log
 _flutter_run.log
+_flutter_err.log
 _go_test.log

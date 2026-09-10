@@ -37,7 +37,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/avatars/
+    - assets/user_avatars/
+    - assets/pet_avatars/
     - assets/config.json
     - assets/config.test.json
     - assets/config.prod.json

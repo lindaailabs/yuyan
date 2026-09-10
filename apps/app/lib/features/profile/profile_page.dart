@@ -35,10 +35,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     }
     setState(() => _loading = true);
     try {
-      await ref.read(authControllerProvider.notifier).updateProfile(
-            nickname: nickname,
-            avatarId: _pendingAvatarId,
-          );
+      await ref
+          .read(authControllerProvider.notifier)
+          .updateProfile(nickname: nickname, avatarId: _pendingAvatarId);
       if (mounted) setState(() => _editing = false);
     } on ApiException catch (e) {
       _showError(e.msg);
@@ -80,10 +79,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             onPressed: _loading
                 ? null
                 : () => setState(() {
-                      _editing = !_editing;
-                      _pendingAvatarId = null;
-                      _nicknameCtrl.text = profile.nickname ?? '';
-                    }),
+                    _editing = !_editing;
+                    _pendingAvatarId = null;
+                    _nicknameCtrl.text = profile.nickname ?? '';
+                  }),
             child: Text(_editing ? Zh.cancel : Zh.profileEdit),
           ),
         ],
@@ -96,7 +95,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 Center(
                   child: _editing
                       ? _avatarPicker(profile.avatarId)
-                      : AvatarWidget(avatarId: profile.avatarId, size: 96),
+                      : UserAvatarWidget(avatarId: profile.avatarId, size: 96),
                 ),
                 const SizedBox(height: 24),
                 ListTile(
@@ -141,7 +140,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          for (final id in List.generate(8, (i) => i + 1))
+          for (final id in List.generate(UserAvatarWidget.count, (i) => i + 1))
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: GestureDetector(
@@ -156,7 +155,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       width: 3,
                     ),
                   ),
-                  child: AvatarWidget(avatarId: id),
+                  child: UserAvatarWidget(avatarId: id),
                 ),
               ),
             ),

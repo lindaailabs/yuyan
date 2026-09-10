@@ -51,10 +51,10 @@ class _CreatePetPageState extends ConsumerState<CreatePetPage> {
             spacing: 12,
             runSpacing: 12,
             children: [
-              for (var i = 1; i <= 8; i++)
+              for (var i = 1; i <= PetAvatarWidget.count; i++)
                 ChoiceChip(
                   selected: _avatarId == i,
-                  label: AvatarWidget(avatarId: i, size: 44),
+                  label: PetAvatarWidget(avatarId: i, size: 44),
                   onSelected: (_) => setState(() => _avatarId = i),
                 ),
             ],

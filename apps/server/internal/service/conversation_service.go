@@ -34,15 +34,15 @@ const (
 // ConversationService 宠物对话业务逻辑：会话、消息、AI Gateway 编排与用量落库。
 // AI 调用不进事务：单行写入本身原子，模型 RT 不占用 DB 连接与行锁。
 type ConversationService struct {
-	conv     *repo.ConversationRepo
-	msgs     *repo.MessageRepo
-	logs     *repo.AICallLogRepo
-	pets     *repo.PetRepo
-	mem      *MemoryService
-	growth   *GrowthService
-	ent      *EntitlementService
+	conv      *repo.ConversationRepo
+	msgs      *repo.MessageRepo
+	logs      *repo.AICallLogRepo
+	pets      *repo.PetRepo
+	mem       *MemoryService
+	growth    *GrowthService
+	ent       *EntitlementService
 	analytics *AnalyticsService
-	gw       ai.Gateway
+	gw        ai.Gateway
 }
 
 // NewConversationService 构造。mem 为 nil 时跳过记忆抽取与召回（便于单测裁剪）。
@@ -58,15 +58,15 @@ func NewConversationService(
 	analytics *AnalyticsService,
 ) *ConversationService {
 	return &ConversationService{
-		conv:     conv,
-		msgs:     msgs,
-		logs:     logs,
-		pets:     pets,
-		mem:      mem,
-		growth:   growth,
-		ent:      ent,
+		conv:      conv,
+		msgs:      msgs,
+		logs:      logs,
+		pets:      pets,
+		mem:       mem,
+		growth:    growth,
+		ent:       ent,
 		analytics: analytics,
-		gw:       gw,
+		gw:        gw,
 	}
 }
 
@@ -164,7 +164,7 @@ func (s *ConversationService) SendMessage(ctx context.Context, uid int64, in *mo
 	}
 	if err := s.msgs.Create(ctx, userMsg); err != nil {
 		if errors.Is(err, repo.ErrDuplicateClientMsgID) && in.ClientMsgID != nil {
-			return s.replayResult(ctx, *in.ClientMsgID, conv.ID)
+			return s.replayResult(ctx, uid, conv.ID, *in.ClientMsgID)
 		}
 		return nil, fmt.Errorf("insert user message: %w", err)
 	}
@@ -211,6 +211,7 @@ func (s *ConversationService) SendMessage(ctx context.Context, uid int64, in *mo
 	}
 	switch {
 	case aiErr != nil:
+		slog.Warn("ai gateway failed", "err", aiErr, "user_id", uid, "pet_id", pet.ID, "conv_id", conv.ID)
 		assistantMsg.Status = model.MessageStatusFailed
 		assistantMsg.Content = fallbackReply
 		assistantMsg.ErrorCode = aiErrCode(res, aiErr)
@@ -292,8 +293,8 @@ func (s *ConversationService) recallMemories(ctx context.Context, petID int64, q
 }
 
 // replayResult 幂等重放：返回首次的用户消息与其后的宠物回复。
-func (s *ConversationService) replayResult(ctx context.Context, clientMsgID string, convID int64) (*model.SendMessageResult, error) {
-	userMsg, err := s.msgs.FindByClientMsgID(ctx, clientMsgID)
+func (s *ConversationService) replayResult(ctx context.Context, uid, convID int64, clientMsgID string) (*model.SendMessageResult, error) {
+	userMsg, err := s.msgs.FindByClientMsgID(ctx, uid, convID, clientMsgID)
 	if repo.IsNotFound(err) {
 		return nil, ErrConversationNotFound
 	}

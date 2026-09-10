@@ -19,11 +19,14 @@ var (
 	ErrPetNotFound       = errcode.New(2205, "宠物不存在")
 )
 
-const maxPetPersonaLen = 2000
+const (
+	maxPetPersonaLen = 2000
+	maxPetAvatarID   = 12
+)
 
 // PetService 宠物档案业务逻辑。
 type PetService struct {
-	pets     *repo.PetRepo
+	pets      *repo.PetRepo
 	analytics *AnalyticsService
 }
 
@@ -177,7 +180,7 @@ func validatePetSpecies(species string) (string, error) {
 }
 
 func validatePetAvatar(id int16) error {
-	if id < 1 || id > maxAvatarID {
+	if id < 1 || id > maxPetAvatarID {
 		return ErrPetAvatarInvalid
 	}
 	return nil

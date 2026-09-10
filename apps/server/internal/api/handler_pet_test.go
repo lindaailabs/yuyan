@@ -12,7 +12,7 @@ func TestPetEndpoints(t *testing.T) {
 	otherAccess, _ := loginByPhone(t, env, "13700000102", "secret123")
 
 	t.Run("create/list/detail/state 正常", func(t *testing.T) {
-		w, resp := doJSON(t, env.r, http.MethodPost, "/api/v1/pets", access, map[string]any{"name": "小燕", "avatar_id": 2})
+		w, resp := doJSON(t, env.r, http.MethodPost, "/api/v1/pets", access, map[string]any{"name": "小燕", "avatar_id": 12})
 		if w.Code != http.StatusOK || resp.Code != 0 {
 			t.Fatalf("create status=%d code=%d msg=%s", w.Code, resp.Code, resp.Msg)
 		}
@@ -27,7 +27,7 @@ func TestPetEndpoints(t *testing.T) {
 		if err := json.Unmarshal(resp.Data, &created); err != nil {
 			t.Fatalf("unmarshal create: %v", err)
 		}
-		if created.ID == 0 || created.Name != "小燕" || created.Species != "swallow" || created.AvatarID != 2 || created.Level != 1 || created.Mood != "curious" {
+		if created.ID == 0 || created.Name != "小燕" || created.Species != "swallow" || created.AvatarID != 12 || created.Level != 1 || created.Mood != "curious" {
 			t.Fatalf("create data 异常: %+v", created)
 		}
 
