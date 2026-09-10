@@ -5,9 +5,13 @@
 # Notes:
 # - Uses portable Go / Flutter SDK under .tools; no global install needed.
 # - Backend loads apps/server/config.test.yaml via -env test (port 8089, dev-only CORS on).
-# - Frontend fixed on 8081; open http://localhost:8081 in browser; API base from config.test.json -> :8089.
+# - Frontend fixed on 8081; open http://<LAN_IP>:8080 in browser (nginx same-origin entry);
+#   API base comes from config.test.json -> http://<LAN_IP>:8080/api/v1.
 # - Logs: _backend_run.log / _flutter_run.log (processes are independent; closing this window won't stop them).
 # - Stop: end the go / flutter(dart) processes in Task Manager, or close their windows.
+
+# Local debugging uses a fixed LAN IP (so phones and other LAN devices can reach it), not localhost.
+$lanIp = '192.168.3.189'
 
 $ErrorActionPreference = 'Stop'
 $root = Resolve-Path "$PSScriptRoot/.."
@@ -32,5 +36,5 @@ Write-Host '[dev] starting frontend flutter run -d web-server --web-port 8081  -
 Start-Process -FilePath $flutterBin -ArgumentList 'run -d web-server --web-port 8081' -WorkingDirectory (Join-Path $root 'apps/app') -RedirectStandardOutput (Join-Path $root '_flutter_run.log') -RedirectStandardError (Join-Path $root '_flutter_err.log') -NoNewWindow
 
 Start-Sleep -Seconds 2
-Write-Host '[dev] done. open http://localhost:8081  (backend :8089)' -ForegroundColor Green
+Write-Host "[dev] done. open http://${lanIp}:8080  (nginx same-origin; backend :8089, frontend dev :8081)" -ForegroundColor Green
 Write-Host '[dev] logs: _backend_run.log / _flutter_run.log' -ForegroundColor DarkGray

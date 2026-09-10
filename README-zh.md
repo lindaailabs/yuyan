@@ -64,11 +64,11 @@ powershell -ExecutionPolicy Bypass -File scripts/dev.ps1
 ```
 
 - 后端：`go run ./cmd/server -env test` → `:8089`（含 dev-only CORS）
-- 前端：`flutter run -d web-server --web-port 8081` → 浏览器开 `http://localhost:8081`
+- 前端：`flutter run -d web-server --web-port 8081` → 浏览器开 `http://<内网IP>:8080`（nginx 同域入口；也可直连 `:8081`）
 - 日志：`_backend_run.log` / `_flutter_run.log`；停止就结束 `go` / `flutter(dart)` 进程
 - 本机 `flutter run -d chrome` 拉不起浏览器时，web-server 模式最稳（手动开 URL 即可）
 
-> 前端固定 8081，避免每次随机端口；后端测试端口为 8089（避开 docker server 容器占用的 8080）。
+> 前端固定 8081，避免每次随机端口；后端测试端口 8089；nginx 监听 8080 做**同域反代**（页面与 `/api` 同源，手机等内网设备访问不产生跨域）。下文 `<内网IP>` 指本机在内网中的地址（形如 `192.168.x.x`，用 `ipconfig` 查看）；联调请统一使用它，**不要用 localhost**，否则手机等内网设备无法访问。
 
 ### 1. 起存储（MySQL / Redis）
 
@@ -94,13 +94,13 @@ go run ./cmd/server -env test                  # 命令行参数指定环境，�
   - 直接指定文件：`go run ./cmd/server -config config.test.yaml`（`-config` 优先级最高）
 - 不接真实模型：`config.test.yaml` 里 `ai_provider` 设为 `mock`（默认），后端不触网、确定性回复。
 - 接真实模型：`ai_provider: openai`，填 `ai_base_url`(url) / `ai_api_key`(key) / `ai_model`(name)。
-- 健康检查：`curl http://127.0.0.1:8089/healthz`
+- 健康检查：`curl http://<内网IP>:8089/healthz`（或经 nginx：`curl http://<内网IP>:8080/healthz`）
 - 模型 key 默认写在 `config.test.yaml` 里（文件已被忽略不提交）；也可用环境变量 `AI_API_KEY` 覆盖。
 
 ### 3. Flutter（Chrome 走流程）
 
 接口前缀按环境放在配置文件里（对应后端 `config.test.yaml` / `config.prod.yaml`），集中在 `apps/app/lib/core/app_config.dart`：
-- `apps/app/assets/config.test.json`（本地调试，默认 `http://localhost:8089/api/v1`）
+- `apps/app/assets/config.test.json`（本地调试，默认 `http://<内网IP>:8080/api/v1`，经 nginx 同域反代）
 - `apps/app/assets/config.prod.json`（正式，填你的服务器地址）
 
 取值优先级：`--dart-define=API_BASE_URL` > `assets/config.<APP_ENV>.json` > `assets/config.json` > 内置默认。**本地调试零参数**，直接读 `config.test.json`：
@@ -113,7 +113,7 @@ flutter run -d chrome
 ```
 
 - `APP_ENV` 默认 `test`，所以 `flutter run` 自动加载 `config.test.json`，不用带任何参数。
-- 想临时覆盖某个地址：`flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8089/api/v1`。
+- 想临时覆盖某个地址：`flutter run -d web-server --dart-define=API_BASE_URL=http://<内网IP>:8080/api/v1`。
 
 ### 4. 登录（手机号 + 密码）
 
@@ -156,7 +156,7 @@ flutter build apk --dart-define=API_BASE_URL=http://<服务器地址>:8080/api/v
 ```
 
 - `APP_ENV` 默认 `test`；打包正式环境务必传 `--dart-define=APP_ENV=prod`，否则会打进 test 配置。
-- 模拟器：`http://10.0.2.2:8080/api/v1`（Android）/ `http://localhost:8080/api/v1`（iOS Simulator）。
+- 模拟器：`http://<内网IP>:8080/api/v1`（Android / iOS Simulator 均可用；Android 也可用宿主别名 `http://10.0.2.2:8089/api/v1` 直连后端）。
 - 真机同局域网调试：填开发机局域网 IP，如 `http://192.168.1.10:8080/api/v1`。
 - 原生 app 不受 CORS 限制；若发布 Web 版则需另配生产 CORS。
 

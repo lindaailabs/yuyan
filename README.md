@@ -64,11 +64,11 @@ powershell -ExecutionPolicy Bypass -File scripts/dev.ps1
 ```
 
 - Backend: `go run ./cmd/server -env test` → `:8089` (with dev-only CORS)
-- Frontend: `flutter run -d web-server --web-port 8081` → open `http://localhost:8081` in the browser
+- Frontend: `flutter run -d web-server --web-port 8081` → open `http://<LAN_IP>:8080` in the browser (nginx same-origin entry; `:8081` also reachable directly)
 - Logs: `_backend_run.log` / `_flutter_run.log`; stop by ending the `go` / `flutter(dart)` processes
 - If `flutter run -d chrome` cannot launch the browser on your machine, web-server mode is the most reliable (just open the URL manually)
 
-> Frontend is fixed on 8081 to avoid a random port each time; the backend test port is 8089 (avoiding the 8080 used by the docker server container).
+> Frontend is fixed on 8081 to avoid a random port each time; the backend test port is 8089; nginx listens on 8080 as a **same-origin reverse proxy** (page and `/api` share one origin, so LAN devices such as phones hit no CORS). `<LAN_IP>` below means your machine's LAN address (`192.168.x.x`; check with `ipconfig`). Always use it for debugging, **not localhost**, so phones and other LAN devices can reach the app.
 
 ### 1. Start storage (MySQL / Redis)
 
@@ -94,12 +94,12 @@ go run ./cmd/server -env test                  # pass env as a CLI flag, auto-lo
   - Explicit file: `go run ./cmd/server -config config.test.yaml` (`-config` wins)
 - No real model: set `ai_provider: mock` (default) in `config.test.yaml` — deterministic, no network.
 - Real model: `ai_provider: openai`, fill `ai_base_url` (url) / `ai_api_key` (key) / `ai_model` (name).
-- Health check: `curl http://127.0.0.1:8089/healthz`
+- Health check: `curl http://<LAN_IP>:8089/healthz` (or via nginx: `curl http://<LAN_IP>:8080/healthz`)
 
 ### 3. Flutter (Chrome walkthrough)
 
 The base URL prefix is managed per environment in config files (mirroring the backend `config.test.yaml` / `config.prod.yaml`), centered in `apps/app/lib/core/app_config.dart`:
-- `apps/app/assets/config.test.json` (local debug, defaults to `http://localhost:8089/api/v1`)
+- `apps/app/assets/config.test.json` (local debug, defaults to `http://<LAN_IP>:8080/api/v1`, proxied by nginx for same-origin)
 - `apps/app/assets/config.prod.json` (production; fill in your server address)
 
 Precedence: `--dart-define=API_BASE_URL` > `assets/config.<APP_ENV>.json` > `assets/config.json` > built-in default. **Local debugging needs zero flags** — it reads `config.test.json` by default:
@@ -112,7 +112,7 @@ flutter run -d chrome
 ```
 
 - `APP_ENV` defaults to `test`, so `flutter run` automatically loads `config.test.json` with no flags.
-- Temporary override: `flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8089/api/v1`.
+- Temporary override: `flutter run -d web-server --dart-define=API_BASE_URL=http://<LAN_IP>:8080/api/v1`.
 
 ### 4. Login (phone + password)
 
@@ -155,7 +155,7 @@ flutter build apk --dart-define=API_BASE_URL=http://<server-address>:8080/api/v1
 ```
 
 - `APP_ENV` defaults to `test`; always pass `--dart-define=APP_ENV=prod` for production builds, otherwise the test config gets bundled.
-- Emulator default: `http://10.0.2.2:8080/api/v1` (Android) / `http://localhost:8080/api/v1` (iOS Simulator).
+- Emulator default: `http://<LAN_IP>:8080/api/v1` (works for both Android and iOS Simulator; Android can also use the host alias `http://10.0.2.2:8089/api/v1` to hit the backend directly).
 - Real device on the same LAN: use the dev machine's LAN IP, e.g. `http://192.168.1.10:8080/api/v1`.
 - Native apps are not bound by CORS; a web release would need production CORS configured separately.
 
